@@ -283,7 +283,7 @@ pl.savefig('/tmp/facet_pdf.png',dpi=300)
 
 pl.figure(2)
 pl.clf()
-pl.plot(xrange*1e3,power_per_m2[0,:]/1.e3,'-',
+pl.plot(-xrange*1e3,power_per_m2[0,:]/1.e3,'-',
         xrange*1e3,power_per_m2[1,:]/1.e3,'-')
 pl.xlabel('Position (mm)')
 pl.ylabel('Heating power (kW/m^2)')
