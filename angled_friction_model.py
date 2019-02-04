@@ -6,8 +6,11 @@ from scipy.integrate import quad
 from scipy.optimize import newton
 from numpy.random import rand
 
-import crackclosuresim.crack_utils_1D as cu1
+#import crackclosuresim.crack_utils_1D as cu1
 
+from crackclosuresim2 import solve_normalstress
+from crackclosuresim2 import inverse_closure
+from crackclosuresim2 import Tada_ModeI_CircularCrack_along_midline
 from crackclosuresim2 import solve_shearstress
 from crackclosuresim2 import ModeII_throughcrack_CSDformula
 
@@ -27,8 +30,8 @@ friction_coefficient=0.3
 vibration_frequency=20e3  # (Hz)
 
 static_load=60e6  # tensile static load of 60MPa
-vib_normal_stress_ampl = 0e6  # vibrational normal stress amplitude. 
-vib_shear_stress_ampl = 40e6  # Assume shear amplitude peaks simultaneously with
+vib_normal_stress_ampl =40e6  # vibrational normal stress amplitude. 
+vib_shear_stress_ampl = 15e6  # Assume shear amplitude peaks simultaneously with
 # normal stress. NOT CURRENTLY USED!!!
 # assume also that there is no synergy between heating from different modes. 
 
@@ -46,7 +49,9 @@ tau_yield=sigma_yield/2.0
 G=E/(2*(1+nu))
 width=25.4e-3
 
-shear_crack_model = ModeII_throughcrack_CSDformula(E,nu)
+crack_model_normal = Tada_ModeI_CircularCrack_along_midline(E,nu)
+crack_model_shear = ModeII_throughcrack_CSDformula(E,nu)
+
 
 
 # units of meters? half-crack lengths for a surface crack  
@@ -62,9 +67,6 @@ reff_leftside=np.array([ .5e-3, .7e-3, .9e-3, 1.05e-3, 1.2e-3, 1.33e-3, 1.45e-3,
 seff_leftside=np.array([ 0.0, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
 
 
-stress_field_spl_leftside=cu1.inverse_closure(reff_leftside,seff_leftside,cu1.weightfun_through,(width,))
-stress_field_spl_rightside=cu1.inverse_closure(reff_rightside,seff_rightside,cu1.weightfun_through,(width,))
-
 
 
 
@@ -77,7 +79,7 @@ xmax = 2e-3
 assert(xmax > aleft)
 assert(xmax > aright)
 
-approximate_xstep=125e-6 # 25um
+approximate_xstep=25e-6 # 25um
 num_boundary_steps=int((xmax)//approximate_xstep)
 numsteps = num_boundary_steps-1
 xstep = (xmax)/(numsteps)
@@ -85,6 +87,15 @@ numdraws=20 # draws per step
 
 x_bnd = xstep*np.arange(num_boundary_steps) # 
 xrange = (x_bnd[1:] + x_bnd[:-1])/2.0
+
+
+#stress_field_spl_leftside=cu1.inverse_closure(reff_leftside,seff_leftside,cu1.weightfun_through,(width,))
+#stress_field_spl_rightside=cu1.inverse_closure(reff_rightside,seff_rightside,cu1.weightfun_through,(width,))
+
+closure_stress_leftside=inverse_closure(reff_leftside,seff_leftside,xrange,x_bnd,xstep,aleft,sigma_yield,crack_model_normal)
+closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_bnd,xstep,aright,sigma_yield,crack_model_normal)
+
+
 
 power_per_m2 = np.zeros((2,xrange.shape[0]),dtype='d')
 vibration_ampl = np.zeros((2,xrange.shape[0]),dtype='d')
@@ -116,67 +127,80 @@ for side_idx in range(2):
     
     
     if side==-1:
-        stress_field_spl=stress_field_spl_leftside
-        reff=reff_leftside
-        a_crack=aleft
+      closure_stress = closure_stress_leftside
+      #stress_field_spl=stress_field_spl_leftside
+      reff=reff_leftside
+      a_crack=aleft
 
-        pass
+      pass
     else: 
-        stress_field_spl=stress_field_spl_rightside
-        reff=reff_rightside
-        a_crack=aright
+      #stress_field_spl=stress_field_spl_rightside
+      closure_stress = closure_stress_rightside
+      reff=reff_rightside
+      a_crack=aright
+      
+      pass
 
-        pass
-
-    closure_state_x = splev(x,stress_field_spl,ext=1) 
+    #closure_state_x = splev(x,stress_field_spl,ext=1) 
+    closure_state_x = closure_stress[xcnt]
     
     # Evaluate closure state on both sides of static load
-    closure_point_sub=cu1.find_length(static_load-vib_normal_stress_ampl,stress_field_spl,np.max(reff),cu1.weightfun_through,(width,))
     
-    (closure_state_sub_a,closure_state_sub)=cu1.effective_stresses_full(reff,np.max(reff),static_load-vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,))
+    #closure_point_sub=cu1.find_length(static_load-vib_normal_stress_ampl,stress_field_spl,np.max(reff),cu1.weightfun_through,(width,))
+    (closure_point_sub, sigma_sub, tensile_displ_sub) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load-vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
+    
+    
+    #(closure_state_sub_a,closure_state_sub)=cu1.effective_stresses_full(reff,np.max(reff),static_load-vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,))
 
-    closure_point_add=cu1.find_length(static_load+vib_normal_stress_ampl,stress_field_spl,np.max(reff),cu1.weightfun_through,(width,))
-    (closure_state_add_a,closure_state_add)=cu1.effective_stresses_full(reff,np.max(reff),static_load+vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,))
+    #closure_point_add=cu1.find_length(static_load+vib_normal_stress_ampl,stress_field_spl,np.max(reff),cu1.weightfun_through,(width,))
+    #(closure_state_add_a,closure_state_add)=cu1.effective_stresses_full(reff,np.max(reff),static_load+vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,))
     
     # ***!!!! bug: closure state from effective_stresses_full appears to drop to zero at physical crack tip.
+
+    (closure_point_add, sigma_add, tensile_displ_add) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load+vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
     
     
     # Evaluate at x
-    if x <= closure_state_sub_a[0]:
-        closure_state_sub_x=0.0
-        pass
+    if x <= closure_point_sub:
+      closure_state_sub_x=0.0
+      pass
     else:
-        closure_state_sub_x=scipy.interpolate.interp1d(closure_state_sub_a,closure_state_sub,fill_value="extrapolate")(x)
-        pass
+      #closure_state_sub_x=scipy.interpolate.interp1d(closure_state_sub_a,closure_state_sub,fill_value="extrapolate")(x)
+      closure_state_sub_x = sigma_sub[xcnt]
+      pass
     
-    if x <= closure_state_add_a[0]:
-        closure_state_add_x=0.0
-        pass
+    if x <= closure_point_add:
+      closure_state_add_x=0.0
+      pass
     else:
-        closure_state_add_x=scipy.interpolate.interp1d(closure_state_add_a,closure_state_add,fill_value="extrapolate")(x)
-        pass
+      #closure_state_add_x=scipy.interpolate.interp1d(closure_state_add_a,closure_state_add,fill_value="extrapolate")(x)
+      closure_state_add_x = sigma_add[xcnt]
+      pass
+
+    print("sigma_sub[%d]=%f; sigma_add[%d]=%f" % (xcnt,sigma_sub[xcnt],xcnt,sigma_add[xcnt]))
     
     
     # uyy is double calculated value because each side moves by this much
-    uyy_add=2.0*cu1.uyy(x,np.max(reff),static_load+vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,),E,nu,configuration="PLANE_STRESS")
+    #uyy_add=2.0*cu1.uyy(x,np.max(reff),static_load+vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,),E,nu,configuration="PLANE_STRESS")
+    uyy_add = tensile_displ_add[xcnt]*2.0
 
-    uyy_sub=2.0*cu1.uyy(x,np.max(reff),static_load-vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,),E,nu,configuration="PLANE_STRESS")
-
+    #uyy_sub=2.0*cu1.uyy(x,np.max(reff),static_load-vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,),E,nu,configuration="PLANE_STRESS")
+    uyy_sub = tensile_displ_sub[xcnt]*2.0
 
     # ss variables are for shear_stickslip calculations
 
-    ss_sigma_closure_sub = np.zeros(numsteps,dtype='d')
+    #ss_sigma_closure_sub = np.zeros(numsteps,dtype='d')
     # note minus sign because compression positive for shear_stickslip.py
-    ss_sigma_closure_sub[xrange > closure_state_sub_a[0]] = -scipy.interpolate.interp1d(closure_state_sub_a,closure_state_sub,fill_value="extrapolate")(xrange[xrange > closure_state_sub_a[0]])
+    #ss_sigma_closure_sub[xrange > closure_state_sub_a[0]] = -scipy.interpolate.interp1d(closure_state_sub_a,closure_state_sub,fill_value="extrapolate")(xrange[xrange > closure_state_sub_a[0]])
 
-    ss_sigma_closure_add = np.zeros(numsteps,dtype='d')
+    #ss_sigma_closure_add = np.zeros(numsteps,dtype='d')
     # note minus sign because compression positive for shear_stickslip.py
-    ss_sigma_closure_add[xrange > closure_state_add_a[0]] = -scipy.interpolate.interp1d(closure_state_add_a,closure_state_add,fill_value="extrapolate")(xrange[xrange > closure_state_add_a[0]])
+    #ss_sigma_closure_add[xrange > closure_state_add_a[0]] = -scipy.interpolate.interp1d(closure_state_add_a,closure_state_add,fill_value="extrapolate")(xrange[xrange > closure_state_add_a[0]])
 
-    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,ss_sigma_closure_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,shear_crack_model)
+    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,closure_stress-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
     
-    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,ss_sigma_closure_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,shear_crack_model)
-
+    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,closure_stress-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
+    
     
     # Warning: We are not requiring shear continuity between left and right
     # sides of the crack (!) 
