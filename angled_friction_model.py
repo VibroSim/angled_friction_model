@@ -13,6 +13,8 @@ from crackclosuresim2 import inverse_closure
 from crackclosuresim2 import Tada_ModeI_CircularCrack_along_midline
 from crackclosuresim2 import solve_shearstress
 from crackclosuresim2 import ModeII_throughcrack_CSDformula
+from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midline
+
 
 doplots=True
 
@@ -50,8 +52,8 @@ G=E/(2*(1+nu))
 width=25.4e-3
 
 crack_model_normal = Tada_ModeI_CircularCrack_along_midline(E,nu)
-crack_model_shear = ModeII_throughcrack_CSDformula(E,nu)
-
+#crack_model_shear = ModeII_throughcrack_CSDformula(E,nu)
+crack_model_shear = Fabrikant_ModeII_CircularCrack_along_midline(E,nu)
 
 
 # units of meters? half-crack lengths for a surface crack  
