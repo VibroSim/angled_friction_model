@@ -8,7 +8,8 @@ from numpy.random import rand
 
 import crackclosuresim.crack_utils_1D as cu1
 
-from shear_stickslip import solve_shearstress
+from crackclosuresim2 import solve_shearstress
+from crackclosuresim2 import ModeII_throughcrack_CSDformula
 
 doplots=True
 
@@ -45,6 +46,8 @@ tau_yield=sigma_yield/2.0
 G=E/(2*(1+nu))
 width=25.4e-3
 
+shear_crack_model = ModeII_throughcrack_CSDformula(E,nu)
+
 
 # units of meters? half-crack lengths for a surface crack  
 reff_rightside=np.array([ .5e-3, .7e-3, .9e-3, 1.05e-3, 1.2e-3, 1.33e-3, 1.45e-3, 1.56e-3, 1.66e-3],dtype='d')
@@ -74,7 +77,7 @@ xmax = 2e-3
 assert(xmax > aleft)
 assert(xmax > aright)
 
-approximate_xstep=25e-6 # 25um
+approximate_xstep=125e-6 # 25um
 num_boundary_steps=int((xmax)//approximate_xstep)
 numsteps = num_boundary_steps-1
 xstep = (xmax)/(numsteps)
@@ -170,10 +173,9 @@ for side_idx in range(2):
     # note minus sign because compression positive for shear_stickslip.py
     ss_sigma_closure_add[xrange > closure_state_add_a[0]] = -scipy.interpolate.interp1d(closure_state_add_a,closure_state_add,fill_value="extrapolate")(xrange[xrange > closure_state_add_a[0]])
 
-    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,ss_sigma_closure_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,E,nu,tau_yield
-)
+    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,ss_sigma_closure_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,shear_crack_model)
     
-    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,ss_sigma_closure_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,E,nu,tau_yield)
+    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,ss_sigma_closure_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,shear_crack_model)
 
     
     # Warning: We are not requiring shear continuity between left and right
