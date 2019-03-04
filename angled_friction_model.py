@@ -17,7 +17,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           sigma_yield,tau_yield,
                           friction_coefficient,
                           closure_stress,
-                          beta_unnorm_pdf,
+                          beta_drawfunc,
                           a_crack,
                           static_load,
                           vib_normal_stress_ampl,
@@ -38,19 +38,19 @@ def angled_friction_model(x_bnd,xrange,xstep,
     xleft=x_bnd[xcnt]
     xright=x_bnd[xcnt+1]
     
-    # determine normalization factor for pdf at this x position
-    beta_unnorm_int=quad(lambda beta: beta_unnorm_pdf(beta,x),-np.pi,np.pi)[0]
+    ## determine normalization factor for pdf at this x position
+    #beta_unnorm_int=quad(lambda beta: beta_unnorm_pdf(beta,x),-np.pi,np.pi)[0]
+    #
+    ## normalized pdf
+    #beta_pdf = lambda beta: beta_unnorm_pdf(beta,x)/beta_unnorm_int    
+    #
+    ## cdf 
+    #beta_cdf = lambda beta: quad(beta_pdf,-np.pi,beta)[0]
+    #
+    ## inverse of cdf   # CDF(beta) = prob -> 
+    #beta_cdf_inverse = lambda prob: newton(lambda beta: beta_cdf(beta)-prob,0.0)
     
-    # normalized pdf
-    beta_pdf = lambda beta: beta_unnorm_pdf(beta,x)/beta_unnorm_int    
-    
-    # cdf 
-    beta_cdf = lambda beta: quad(beta_pdf,-np.pi,beta)[0]
-    
-    # inverse of cdf   # CDF(beta) = prob -> 
-    beta_cdf_inverse = lambda prob: newton(lambda beta: beta_cdf(beta)-prob,0.0)
-    
-    beta_draws = np.vectorize(beta_cdf_inverse)(rand(numdraws))
+    beta_draws = np.array([ beta_drawfunc(x) for cnt in range(numdraws) ]) # = np.vectorize(beta_cdf_inverse)(rand(numdraws))
     
     
     #closure_state_x = splev(x,stress_field_spl,ext=1) 
@@ -254,13 +254,13 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
 
   if (doplots):
-    betarange=np.linspace(-np.pi,np.pi,800)
-    pl.figure()
-    pl.clf()
-    pl.plot(betarange*180.0/np.pi,beta_pdf(betarange),'-')
-    pl.xlabel('Facet orientation (degrees from flat)')
-    pl.ylabel('Probability density (/rad)')
-    #pl.savefig('/tmp/facet_pdf.png',dpi=300)
+    #betarange=np.linspace(-np.pi,np.pi,800)
+    #pl.figure()
+    #pl.clf()
+    #pl.plot(betarange*180.0/np.pi,beta_pdf(betarange),'-')
+    #pl.xlabel('Facet orientation (degrees from flat)')
+    #pl.ylabel('Probability density (/rad)')
+    ##pl.savefig('/tmp/facet_pdf.png',dpi=300)
     
     
     pl.figure()

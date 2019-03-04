@@ -26,7 +26,7 @@ i=(0+1j) # imaginary number
 # to pi (backwards trajectory, infinitesimally upward)
 
 # note: our beta is 90deg - evans and hutchinson beta
-beta_components = ( (2.0,0.0,28*np.pi/180.0), )  # Each entry: component magnitude, gaussian mean, Gaussian sigma
+beta_components = ( (1.0,0.0,28*np.pi/180.0), )  # Each entry: component magnitude, gaussian mean, Gaussian sigma
 
 friction_coefficient=0.3
 
@@ -39,7 +39,12 @@ vib_shear_stress_ampl = 15e6  # Assume shear amplitude peaks simultaneously with
 # assume also that there is no synergy between heating from different modes. 
 
 # x is position along crack (currently no x dependence to beta 
-beta_unnorm_pdf = lambda beta,x:  np.array([ (magnitude/np.sqrt(2*np.pi*sigma**2)) * np.exp(-(beta - mean)**2/(2.0*sigma**2.0)) for (magnitude,mean,sigma) in beta_components ],dtype='d').sum(0)
+#beta_unnorm_pdf = lambda beta,x:  np.array([ (magnitude/np.sqrt(2*np.pi*sigma**2)) * np.exp(-(beta - mean)**2/(2.0*sigma**2.0)) for (magnitude,mean,sigma) in beta_components ],dtype='d').sum(0)
+
+assert(len(beta_components)==1 and beta_components[0][0]==1.0)
+
+beta_drawfunc = lambda x: np.random.randn()*beta_components[0][2]+beta_components[0][1]
+
 
 # crackclosuresim parameters
 # Low K
@@ -104,7 +109,7 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
                                               sigma_yield,tau_yield,
                                               friction_coefficient,
                                               closure_stress_leftside,
-                                              beta_unnorm_pdf,
+                                              beta_drawfunc,
                                               aleft,
                                               static_load,
                                               vib_normal_stress_ampl,
@@ -121,7 +126,7 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
                                                sigma_yield,tau_yield,
                                                friction_coefficient,
                                                closure_stress_rightside,
-                                               beta_unnorm_pdf,
+                                               beta_drawfunc,
                                                aright,
                                                static_load,
                                                vib_normal_stress_ampl,
