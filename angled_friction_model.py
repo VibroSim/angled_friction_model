@@ -1,4 +1,3 @@
-#from scipy.interpolate import splrep, splev
 import scipy 
 import numpy as np
 from matplotlib import pyplot as pl
@@ -6,7 +5,6 @@ from scipy.integrate import quad
 from scipy.optimize import newton
 from numpy.random import rand
 
-#import crackclosuresim.crack_utils_1D as cu1
 
 from crackclosuresim2 import solve_normalstress
 from crackclosuresim2 import solve_shearstress
@@ -33,8 +31,6 @@ def angled_friction_model(x_bnd,xrange,xstep,
   vibration_ampl = np.zeros((xrange.shape[0]),dtype='d')
   numsteps=xrange.shape[0]
 
-  #for side_idx in range(2):
-  #side=[ -1, 1][side_idx]
   for xcnt in range(numsteps):
     x=xrange[xcnt]
 
@@ -62,17 +58,9 @@ def angled_friction_model(x_bnd,xrange,xstep,
     
     # Evaluate closure state on both sides of static load
     
-    #closure_point_sub=cu1.find_length(static_load-vib_normal_stress_ampl,stress_field_spl,np.max(reff),cu1.weightfun_through,(width,))
     (closure_point_sub, sigma_sub, tensile_displ_sub) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load-vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
     
     
-    #(closure_state_sub_a,closure_state_sub)=cu1.effective_stresses_full(reff,np.max(reff),static_load-vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,))
-
-    #closure_point_add=cu1.find_length(static_load+vib_normal_stress_ampl,stress_field_spl,np.max(reff),cu1.weightfun_through,(width,))
-    #(closure_state_add_a,closure_state_add)=cu1.effective_stresses_full(reff,np.max(reff),static_load+vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,))
-    
-    # ***!!!! bug: closure state from effective_stresses_full appears to drop to zero at physical crack tip.
-
     (closure_point_add, sigma_add, tensile_displ_add) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load+vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
     
     
@@ -81,7 +69,6 @@ def angled_friction_model(x_bnd,xrange,xstep,
       closure_state_sub_x=0.0
       pass
     else:
-      #closure_state_sub_x=scipy.interpolate.interp1d(closure_state_sub_a,closure_state_sub,fill_value="extrapolate")(x)
       closure_state_sub_x = sigma_sub[xcnt]
       pass
     
@@ -89,7 +76,6 @@ def angled_friction_model(x_bnd,xrange,xstep,
       closure_state_add_x=0.0
       pass
     else:
-      #closure_state_add_x=scipy.interpolate.interp1d(closure_state_add_a,closure_state_add,fill_value="extrapolate")(x)
       closure_state_add_x = sigma_add[xcnt]
       pass
 
@@ -97,22 +83,11 @@ def angled_friction_model(x_bnd,xrange,xstep,
     
     
     # uyy is double calculated value because each side moves by this much
-    #uyy_add=2.0*cu1.uyy(x,np.max(reff),static_load+vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,),E,nu,configuration="PLANE_STRESS")
     uyy_add = tensile_displ_add[xcnt]*2.0
 
-    #uyy_sub=2.0*cu1.uyy(x,np.max(reff),static_load-vib_normal_stress_ampl,stress_field_spl,cu1.weightfun_through,(width,),E,nu,configuration="PLANE_STRESS")
     uyy_sub = tensile_displ_sub[xcnt]*2.0
 
     # ss variables are for shear_stickslip calculations
-
-    #ss_sigma_closure_sub = np.zeros(numsteps,dtype='d')
-    # note minus sign because compression positive for shear_stickslip.py
-    #ss_sigma_closure_sub[xrange > closure_state_sub_a[0]] = -scipy.interpolate.interp1d(closure_state_sub_a,closure_state_sub,fill_value="extrapolate")(xrange[xrange > closure_state_sub_a[0]])
-
-    #ss_sigma_closure_add = np.zeros(numsteps,dtype='d')
-    # note minus sign because compression positive for shear_stickslip.py
-    #ss_sigma_closure_add[xrange > closure_state_add_a[0]] = -scipy.interpolate.interp1d(closure_state_add_a,closure_state_add,fill_value="extrapolate")(xrange[xrange > closure_state_add_a[0]])
-
     (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,closure_stress-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
     
     (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,closure_stress-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
@@ -293,7 +268,6 @@ def angled_friction_model(x_bnd,xrange,xstep,
     pl.plot(xrange*1e3,power_per_m2/1.e3,'-')
     pl.xlabel('Position (mm)')
     pl.ylabel('Heating power (kW/m^2)')
-    #pl.title('sigma = %.1f deg' % (beta_components[0][2]*180.0/np.pi))
     #pl.savefig('/tmp/frictional_heating.png',dpi=300)
     #pl.show()
     pass

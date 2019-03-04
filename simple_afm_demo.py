@@ -92,9 +92,6 @@ x_bnd = xstep*np.arange(num_boundary_steps) #
 xrange = (x_bnd[1:] + x_bnd[:-1])/2.0
 
 
-#stress_field_spl_leftside=cu1.inverse_closure(reff_leftside,seff_leftside,cu1.weightfun_through,(width,))
-#stress_field_spl_rightside=cu1.inverse_closure(reff_rightside,seff_rightside,cu1.weightfun_through,(width,))
-
 closure_stress_leftside=inverse_closure(reff_leftside,seff_leftside,xrange,x_bnd,xstep,aleft,sigma_yield,crack_model_normal)
 closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_bnd,xstep,aright,sigma_yield,crack_model_normal)
 
