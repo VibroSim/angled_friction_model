@@ -298,8 +298,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
     #pl.show()
     pass
 
-  
-  return (TotPower,power_per_m2,vibration_ampl)
+  return (power_per_m2,vibration_ampl)
 
 
 

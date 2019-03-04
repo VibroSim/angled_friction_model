@@ -1,6 +1,3 @@
-
-from angled_friction_model import angled_friction_model
-
 import scipy 
 import numpy as np
 from matplotlib import pyplot as pl
@@ -9,6 +6,14 @@ from crackclosuresim2 import inverse_closure
 from crackclosuresim2 import Tada_ModeI_CircularCrack_along_midline
 from crackclosuresim2 import ModeII_throughcrack_CSDformula
 from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midline
+
+
+
+from function_as_script import scriptify
+
+from angled_friction_model import angled_friction_model as angled_friction_model_function
+
+angled_friction_model = scriptify(angled_friction_model_function)
 
 
 
@@ -95,8 +100,7 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
 
 
 
-(TotPower_left,
- power_per_m2_left,
+(power_per_m2_left,
  vibration_ampl_left) = angled_friction_model(x_bnd,xrange,xstep,
                                               numdraws,
                                               E,nu,
@@ -113,8 +117,7 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
                                               crack_model_shear,
                                               doplots)
 
-(TotPower_right,
- power_per_m2_right,
+(power_per_m2_right,
  vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
                                                numdraws,
                                                E,nu,
