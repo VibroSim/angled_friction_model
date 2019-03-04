@@ -17,7 +17,7 @@ angled_friction_model = scriptify(angled_friction_model_function)
 
 
 
-doplots=True
+doplots=False
 
 i=(0+1j) # imaginary number
 
@@ -135,6 +135,17 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
                                                crack_model_normal,
                                                crack_model_shear,
                                                doplots)
+
+
+pl.figure()
+pl.clf()
+pl.plot(-xrange*1e3,power_per_m2_left/1.e3,'-',
+        xrange*1e3,power_per_m2_right/1.e3,'-',)
+pl.xlabel('Position (mm)')
+pl.ylabel('Heating power (kW/m^2)')
+#pl.savefig('/tmp/frictional_heating.png',dpi=300)
+#pl.show()
+
 
 pl.show()
 
