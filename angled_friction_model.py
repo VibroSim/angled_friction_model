@@ -98,23 +98,54 @@ closure_stress_leftside=inverse_closure(reff_leftside,seff_leftside,xrange,x_bnd
 closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_bnd,xstep,aright,sigma_yield,crack_model_normal)
 
 
+(TotPower,
+ power_per_m2,
+ vibration_ampl) = angled_friction_model(x_bnd,xrange,xstep,
+                                         numdraws,
+                                         E,nu,
+                                         sigma_yield,tau_yield,
+                                         friction_coefficient,
+                                         closure_stress_leftside,
+                                         beta_unnorm_pdf,
+                                         aleft,
+                                         static_load,
+                                         vib_normal_stress_ampl,
+                                         vib_shear_stress_ampl,
+                                         vibration_frequency,
+                                         crack_model_normal,
+                                         crack_model_shear)
 
-power_per_m2 = np.zeros((2,xrange.shape[0]),dtype='d')
-vibration_ampl = np.zeros((2,xrange.shape[0]),dtype='d')
+def angled_friction_model(x_bnd,xrange,xstep,
+                          numdraws
+                          E,nu,
+                          sigma_yield,tau_yield
+                          friction_coefficient,
+                          closure_stress,
+                          beta_unnorm_pdf,
+                          a_crack,
+                          static_load,
+                          vib_normal_stress_ampl,
+                          vib_shear_stress_ampl,
+                          vibration_frequency,
+                          crack_model_normal,
+                          crack_model_shear,
+                          doplots):
 
+  power_per_m2 = np.zeros((xrange.shape[0]),dtype='d')
+  vibration_ampl = np.zeros((xrange.shape[0]),dtype='d')
+  numsteps=xrange.shape[0]
 
-for side_idx in range(2):
-  side=[ -1, 1][side_idx]
+  #for side_idx in range(2):
+  #side=[ -1, 1][side_idx]
   for xcnt in range(numsteps):
     x=xrange[xcnt]
 
-    print("side=%d; x=%f um" % (side,x*1e6))
+    print("x=%f um" % (x*1e6))
     xleft=x_bnd[xcnt]
     xright=x_bnd[xcnt+1]
     
-    xsigned = x*side
     # determine normalization factor for pdf at this x position
-    beta_unnorm_int=quad(lambda beta: beta_unnorm_pdf(beta,xsigned),-np.pi,np.pi)[0]
+    beta_unnorm_int=quad(lambda beta: beta_unnorm_pdf(beta,x),-np.pi,np.pi)[0]
     
     # normalized pdf
     beta_pdf = lambda beta: beta_unnorm_pdf(beta,xsigned)/beta_unnorm_int    
@@ -128,21 +159,6 @@ for side_idx in range(2):
     beta_draws = np.vectorize(beta_cdf_inverse)(rand(numdraws))
     
     
-    if side==-1:
-      closure_stress = closure_stress_leftside
-      #stress_field_spl=stress_field_spl_leftside
-      reff=reff_leftside
-      a_crack=aleft
-
-      pass
-    else: 
-      #stress_field_spl=stress_field_spl_rightside
-      closure_stress = closure_stress_rightside
-      reff=reff_rightside
-      a_crack=aright
-      
-      pass
-
     #closure_state_x = splev(x,stress_field_spl,ext=1) 
     closure_state_x = closure_stress[xcnt]
     
@@ -328,9 +344,9 @@ for side_idx in range(2):
 
     utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])/2.0
     PP_vibration_y=uyy_add-uyy_sub
-    vibration_ampl[side_idx,xcnt]=PP_vibration_y/2.0
+    vibration_ampl[xcnt]=PP_vibration_y/2.0
     #PP_vibration_t=utt*2.0
-    tangential_vibration_ampl=np.abs(vibration_ampl[side_idx,xcnt] * np.sin(beta_draws) + utt*np.cos(beta_draws))*slip
+    tangential_vibration_ampl=np.abs(vibration_ampl[xcnt] * np.sin(beta_draws) + utt*np.cos(beta_draws))*slip
     tangential_vibration_velocity_ampl = 2*np.pi*vibration_frequency*tangential_vibration_ampl
     
     # Power = (1/2)Fampl*vampl
@@ -359,30 +375,34 @@ for side_idx in range(2):
     
     TotPower = np.sum(Power)
     
-    power_per_m2[side_idx,xcnt] = TotPower/(xstep*np.pi*x/2.0)
+    power_per_m2[xcnt] = TotPower/(xstep*np.pi*x/2.0)
       
     pass
-  pass
 
 
-if (doplots):
+  if (doplots):
     betarange=np.linspace(-np.pi,np.pi,800)
-    pl.figure(1)
+    pl.figure()
     pl.clf()
     pl.plot(betarange*180.0/np.pi,beta_pdf(betarange),'-')
     pl.xlabel('Facet orientation (degrees from flat)')
     pl.ylabel('Probability density (/rad)')
-    pl.savefig('/tmp/facet_pdf.png',dpi=300)
+    #pl.savefig('/tmp/facet_pdf.png',dpi=300)
     
     
-    pl.figure(2)
+    pl.figure()
     pl.clf()
     pl.plot(-xrange*1e3,power_per_m2[0,:]/1.e3,'-',
             xrange*1e3,power_per_m2[1,:]/1.e3,'-')
     pl.xlabel('Position (mm)')
     pl.ylabel('Heating power (kW/m^2)')
     pl.title('sigma = %.1f deg' % (beta_components[0][2]*180.0/np.pi))
-    pl.savefig('/tmp/frictional_heating.png',dpi=300)
-    pl.show()
+    #pl.savefig('/tmp/frictional_heating.png',dpi=300)
+    #pl.show()
     pass
+
+  
+  return (TotPower,power_per_m2,vibration_ampl)
+
+
 
