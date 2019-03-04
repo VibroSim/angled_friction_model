@@ -7,13 +7,19 @@ from crackclosuresim2 import Tada_ModeI_CircularCrack_along_midline
 from crackclosuresim2 import ModeII_throughcrack_CSDformula
 from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midline
 
-
+## !!!*** WARNING: THERE IS BIZARRE BEHAVIOR WHEN THE NET
+## LOAD DURING A VIBRATION CYCLE GOES ZERO OR NEGATIVE:
+## WE SEE A LARGE INCREMENT IN HEATING AT THE LARGEST
+## VIB AMPLITUDES.
+## CURIOUSLY, SETTING THE STATIC LOAD TO BE SMALLER
+## IN SIMPLE_AFM_DEMO.PY DOESN'T SEEM TO GIVE THE SAME
+## EFFECT (?) WHATEVER IT IS MUST CERTAINLY BE NON-PHYSICAL!!!
 
 from function_as_script import scriptify
 
-#from angled_friction_model import angled_friction_model
-from angled_friction_model import angled_friction_model as angled_friction_model_function
-angled_friction_model = scriptify(angled_friction_model_function)
+from angled_friction_model import angled_friction_model
+#from angled_friction_model import angled_friction_model as angled_friction_model_function
+#angled_friction_model = scriptify(angled_friction_model_function)
 
 
 
@@ -33,9 +39,8 @@ friction_coefficient=0.3
 
 vibration_frequency=20e3  # (Hz)
 
-static_load=60e6  # tensile static load of 60MPa
-vib_normal_stress_ampl =40e6  # vibrational normal stress amplitude. 
-vib_shear_stress_ampl = 15e6  # Assume shear amplitude peaks simultaneously with
+static_load=40e6  # tensile static load of 60MPa
+vib_shear_stress_ampl = 0e6  # Assume shear amplitude peaks simultaneously with
 # normal stress. NOT CURRENTLY USED!!!
 # assume also that there is no synergy between heating from different modes. 
 
@@ -67,13 +72,13 @@ crack_model_shear = Fabrikant_ModeII_CircularCrack_along_midline(E,nu)
 reff_rightside=np.array([ .5e-3, .7e-3, .9e-3, 1.05e-3, 1.2e-3, 1.33e-3, 1.45e-3, 1.56e-3, 1.66e-3],dtype='d')
 
 # opening stresses, units of Pa
-seff_rightside=np.array([ 0.0, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
+seff_rightside=np.array([ -150e6, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
 
 # units of meters? half-crack lengths for a surface crack  
 reff_leftside=np.array([ .5e-3, .7e-3, .9e-3, 1.05e-3, 1.2e-3, 1.33e-3, 1.45e-3, 1.56e-3, 1.66e-3],dtype='d')
 
 # opening stresses, units of Pa
-seff_leftside=np.array([ 0.0, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
+seff_leftside=np.array([ -150e6, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
 
 
 
@@ -103,49 +108,40 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
 
 
 
-(power_per_m2_left,
- vibration_ampl_left) = angled_friction_model(x_bnd,xrange,xstep,
-                                              numdraws,
-                                              E,nu,
-                                              sigma_yield,tau_yield,
-                                              friction_coefficient,
-                                              closure_stress_leftside,
-                                              beta_drawfunc,
-                                              aleft,
-                                              static_load,
-                                              vib_normal_stress_ampl,
-                                              vib_shear_stress_ampl,
-                                              vibration_frequency,
-                                              crack_model_normal,
-                                              crack_model_shear,
-                                              verbose,
-                                              doplots)
+vib_ampls = np.arange(0.0,70.0e6,5.0e6)
 
-(power_per_m2_right,
- vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
-                                               numdraws,
-                                               E,nu,
-                                               sigma_yield,tau_yield,
-                                               friction_coefficient,
-                                               closure_stress_rightside,
-                                               beta_drawfunc,
-                                               aright,
-                                               static_load,
-                                               vib_normal_stress_ampl,
-                                               vib_shear_stress_ampl,
-                                               vibration_frequency,
-                                               crack_model_normal,
-                                               crack_model_shear,
-                                               verbose,
-                                               doplots)
+total_heating_right=np.zeros(vib_ampls.shape,dtype='d')
 
+for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitude. 
+    vib_normal_stress_ampl=vib_ampls[ampl_idx]
+    
+    (power_per_m2_right,
+     vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
+                                                   numdraws,
+                                                   E,nu,
+                                                   sigma_yield,tau_yield,
+                                                   friction_coefficient,
+                                                   closure_stress_rightside,
+                                                   beta_drawfunc,
+                                                   aright,
+                                                   static_load,
+                                                   vib_normal_stress_ampl,
+                                                   vib_shear_stress_ampl,
+                                                   vibration_frequency,
+                                                   crack_model_normal,
+                                                   crack_model_shear,
+                                                   verbose,
+                                                   doplots)
+    
+    total_heating_right[ampl_idx] = np.sum(power_per_m2_right*xrange*xstep*np.pi/2)  # integrate heating of half-semicircles (integrate power *rdrdtheta)
+    pass
 
 pl.figure()
 pl.clf()
-pl.plot(-xrange*1e3,power_per_m2_left/1.e3,'-',
-        xrange*1e3,power_per_m2_right/1.e3,'-',)
-pl.xlabel('Position (mm)')
-pl.ylabel('Heating power (kW/m^2)')
+pl.plot(vib_ampls/1e6,total_heating_right*1e3,'-')
+pl.grid()
+pl.xlabel('Vibration amplitude (MPa)')
+pl.ylabel('Heating power (mW)')
 #pl.savefig('/tmp/frictional_heating.png',dpi=300)
 #pl.show()
 

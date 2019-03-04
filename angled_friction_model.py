@@ -25,7 +25,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           vibration_frequency,
                           crack_model_normal,
                           crack_model_shear,
-                          doplots):
+                          verbose,doplots):
 
   power_per_m2 = np.zeros((xrange.shape[0]),dtype='d')
   vibration_ampl = np.zeros((xrange.shape[0]),dtype='d')
@@ -34,7 +34,10 @@ def angled_friction_model(x_bnd,xrange,xstep,
   for xcnt in range(numsteps):
     x=xrange[xcnt]
 
-    print("x=%f um" % (x*1e6))
+    if verbose: 
+      print("x=%f um" % (x*1e6))
+      pass
+    
     xleft=x_bnd[xcnt]
     xright=x_bnd[xcnt+1]
     
@@ -79,8 +82,9 @@ def angled_friction_model(x_bnd,xrange,xstep,
       closure_state_add_x = sigma_add[xcnt]
       pass
 
-    print("sigma_sub[%d]=%f; sigma_add[%d]=%f" % (xcnt,sigma_sub[xcnt],xcnt,sigma_add[xcnt]))
-    
+    if verbose:
+      print("sigma_sub[%d]=%f; sigma_add[%d]=%f" % (xcnt,sigma_sub[xcnt],xcnt,sigma_add[xcnt]))
+      pass
     
     # uyy is double calculated value because each side moves by this much
     uyy_add = tensile_displ_add[xcnt]*2.0
@@ -149,8 +153,13 @@ def angled_friction_model(x_bnd,xrange,xstep,
     #Q_contributions=np.sum(N_static_nominal*np.sin(beta_draws) + T_static_nominal*np.cos(beta_draws))
     
     # Determine scaling factor for all draws to sum to desired value
-    normal_force_factor=P_static_nominal/P_contributions
-
+    if P_contributions==0.0: # Avoid warning message
+      normal_force_factor=np.inf
+      pass
+    else:
+      normal_force_factor=P_static_nominal/P_contributions
+      pass
+    
     if not np.isfinite(normal_force_factor):
         normal_force_factor=1.0  # in case P_contributions are 0 just set scaling factor to 1.0
         pass
