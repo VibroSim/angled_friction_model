@@ -23,7 +23,7 @@ from angled_friction_model import angled_friction_model
 
 
 
-doplots=False
+doplots=True
 verbose=False
 
 i=(0+1j) # imaginary number
@@ -39,7 +39,7 @@ friction_coefficient=0.3
 
 vibration_frequency=20e3  # (Hz)
 
-static_load=40e6  # tensile static load of 60MPa
+static_load=10e6  # tensile static load of 60MPa
 vib_shear_stress_ampl = 0e6  # Assume shear amplitude peaks simultaneously with
 # normal stress. NOT CURRENTLY USED!!!
 # assume also that there is no synergy between heating from different modes. 
@@ -142,7 +142,8 @@ pl.plot(vib_ampls/1e6,total_heating_right*1e3,'-')
 pl.grid()
 pl.xlabel('Vibration amplitude (MPa)')
 pl.ylabel('Heating power (mW)')
-#pl.savefig('/tmp/frictional_heating.png',dpi=300)
+pl.title('static load = %f MPa' % (static_load/1e6))
+pl.savefig('/tmp/amplitude_experiment_%fMPa.png' % (static_load/1e6),dpi=300)
 #pl.show()
 
 
