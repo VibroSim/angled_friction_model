@@ -17,9 +17,9 @@ from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midl
 
 from function_as_script import scriptify
 
-from angled_friction_model import angled_friction_model
-#from angled_friction_model import angled_friction_model as angled_friction_model_function
-#angled_friction_model = scriptify(angled_friction_model_function)
+#from angled_friction_model import angled_friction_model
+from angled_friction_model import angled_friction_model as angled_friction_model_function
+angled_friction_model = scriptify(angled_friction_model_function)
 
 
 
@@ -39,7 +39,7 @@ friction_coefficient=0.3
 
 vibration_frequency=20e3  # (Hz)
 
-static_load=10e6  # tensile static load of 60MPa
+static_load=60e6  # tensile static load of 60MPa
 vib_shear_stress_ampl = 0e6  # Assume shear amplitude peaks simultaneously with
 # normal stress. NOT CURRENTLY USED!!!
 # assume also that there is no synergy between heating from different modes. 
