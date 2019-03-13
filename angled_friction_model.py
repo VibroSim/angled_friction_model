@@ -91,10 +91,15 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
     uyy_sub = tensile_displ_sub[xcnt]*2.0
 
-    # ss variables are for shear_stickslip calculations
-    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,closure_stress-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
+    # sigma_sub and sigma_add are positive tensile representations of the
+    # normal tractions on the crack surfaces.
+    # The closure stress in each of these states therefore would be
+    # -sigma_sub and -sigma_add respectively. 
     
-    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,closure_stress-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
+    # ss variables are for shear_stickslip calculations
+    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
+    
+    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
     
     
     # Warning: We are not requiring shear continuity between left and right

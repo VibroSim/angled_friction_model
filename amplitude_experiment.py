@@ -40,8 +40,6 @@ friction_coefficient=0.3
 vibration_frequency=20e3  # (Hz)
 
 static_load=60e6  # tensile static load of 60MPa
-vib_shear_stress_ampl = 0e6  # Assume shear amplitude peaks simultaneously with
-# normal stress. NOT CURRENTLY USED!!!
 # assume also that there is no synergy between heating from different modes. 
 
 # x is position along crack (currently no x dependence to beta 
@@ -114,6 +112,9 @@ total_heating_right=np.zeros(vib_ampls.shape,dtype='d')
 
 for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitude. 
     vib_normal_stress_ampl=vib_ampls[ampl_idx]
+    vib_shear_stress_ampl = 0.0 # assume 0 shear
+    #vib_shear_stress_ampl = vib_normal_stress_ampl  # Assume shear amplitude peaks simultaneously with
+# normal stress. 
     
     (power_per_m2_right,
      vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
