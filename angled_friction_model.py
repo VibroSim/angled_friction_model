@@ -6,9 +6,10 @@ from scipy.optimize import newton
 from numpy.random import rand
 
 
+from crackclosuresim2 import crackopening_from_tensile_closure
 from crackclosuresim2 import solve_normalstress
 from crackclosuresim2 import solve_shearstress
-
+from crackclosuresim2 import soft_closure
 
 
 def angled_friction_model(x_bnd,xrange,xstep,
@@ -31,12 +32,53 @@ def angled_friction_model(x_bnd,xrange,xstep,
   vibration_ampl = np.zeros((xrange.shape[0]),dtype='d')
   numsteps=xrange.shape[0]
 
-  # Evaluate closure state on both sides of static load
+  # soft closure parameters
+  Hm = 10e6/(100e-9**(3.0/2.0))  # rough order of magnitude guess
+
+  scp = soft_closure.sc_params.fromcrackgeom(E,x_bnd[-1],numsteps+1,a_crack,1,Hm)
+
+  crack_initial_opening = crackopening_from_tensile_closure(scp.x,scp.x_bnd,closure_stress,scp.dx,scp.a,sigma_yield,crack_model_normal)
+
   
-  (closure_point_sub, sigma_sub, tensile_displ_sub) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load-vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
+  closure_stress_softmodel = closure_stress.copy()
+
+  # In the soft closure model, sigma_closure can't be negativej
+  # (use crack_initial_opening values instead in that domain)
+
+  closure_stress_softmodel[closure_stress_softmodel < 0.0]=0.0
+
+
+  scp.setcrackstate(closure_stress_softmodel,crack_initial_opening)
+
+  
+  # Evaluate contact stress on both sides of static load
+  (param_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
+  (param_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
+
+  sigma_sub=-contact_stress_sub
+  sigma_add=-contact_stress_add
+
+  sub_notopening = np.where(tensile_displ_sub < 0)[0]
+  if sub_notopening.shape[0] > 0:
+    closure_point_sub = xrange[sub_notopening[0]]
+    pass
+  else:
+    closure_point_sub=a_crack
+    pass
+
+  add_notopening = np.where(tensile_displ_add < 0)[0]
+  if add_notopening.shape[0] > 0:
+    closure_point_add = xrange[add_notopening[0]]
+    pass
+  else:
+    closure_point_add=a_crack
+    pass
+
+  
+  #(closure_point_sub, sigma_sub, tensile_displ_sub) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load-vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
     
   
-  (closure_point_add, sigma_add, tensile_displ_add) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load+vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
+  #(closure_point_add, sigma_add, tensile_displ_add) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load+vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
 
   
   for xcnt in range(numsteps):

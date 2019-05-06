@@ -35,7 +35,7 @@ vibration_frequency=20e3  # (Hz)
 
 static_load=60e6  # tensile static load of 60MPa
 vib_normal_stress_ampl =40e6  # vibrational normal stress amplitude. 
-vib_shear_stress_ampl = 15e6  # Assume shear amplitude peaks simultaneously with
+vib_shear_stress_ampl = 0.0*15e6  # Assume shear amplitude peaks simultaneously with
 # normal stress. NOT CURRENTLY USED!!!
 # assume also that there is no synergy between heating from different modes. 
 
