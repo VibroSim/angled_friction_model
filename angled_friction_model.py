@@ -31,6 +31,14 @@ def angled_friction_model(x_bnd,xrange,xstep,
   vibration_ampl = np.zeros((xrange.shape[0]),dtype='d')
   numsteps=xrange.shape[0]
 
+  # Evaluate closure state on both sides of static load
+  
+  (closure_point_sub, sigma_sub, tensile_displ_sub) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load-vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
+    
+  
+  (closure_point_add, sigma_add, tensile_displ_add) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load+vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
+
+  
   for xcnt in range(numsteps):
     x=xrange[xcnt]
 
@@ -59,12 +67,6 @@ def angled_friction_model(x_bnd,xrange,xstep,
     #closure_state_x = splev(x,stress_field_spl,ext=1) 
     closure_state_x = closure_stress[xcnt]
     
-    # Evaluate closure state on both sides of static load
-    
-    (closure_point_sub, sigma_sub, tensile_displ_sub) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load-vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
-    
-    
-    (closure_point_add, sigma_add, tensile_displ_add) = solve_normalstress(xrange,x_bnd,closure_stress,xstep,static_load+vib_normal_stress_ampl,a_crack,sigma_yield,crack_model_normal,calculate_displacements=True)
     
     
     # Evaluate at x
