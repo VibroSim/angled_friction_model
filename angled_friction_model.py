@@ -35,7 +35,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
   # soft closure parameters
   Hm = 10e6/(100e-9**(3.0/2.0))  # rough order of magnitude guess
 
-  scp = soft_closure.sc_params.fromcrackgeom(E,x_bnd[-1],numsteps+1,a_crack,1,Hm)
+  scp = soft_closure.sc_params.fromcrackgeom(crack_model_normal,x_bnd[-1],numsteps+1,a_crack,1,Hm)
 
   crack_initial_opening = crackopening_from_tensile_closure(scp.x,scp.x_bnd,closure_stress,scp.dx,scp.a,sigma_yield,crack_model_normal)
 
@@ -48,12 +48,16 @@ def angled_friction_model(x_bnd,xrange,xstep,
   closure_stress_softmodel[closure_stress_softmodel < 0.0]=0.0
 
 
-  scp.setcrackstate(closure_stress_softmodel,crack_initial_opening)
+  #scp.setcrackstate(closure_stress_softmodel,crack_initial_opening)
+
+  # initialize_contact() solves to find the compressive portion
+  # of crack_initial_opening based on the closure stress profile
+  scp.initialize_contact(closure_stress_softmodel,crack_initial_opening)
 
   
   # Evaluate contact stress on both sides of static load
-  (param_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
-  (param_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
+  (du_da_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
+  (du_da_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
 
   sigma_sub=-contact_stress_sub
   sigma_add=-contact_stress_add
