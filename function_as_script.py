@@ -61,7 +61,13 @@ def add_to_lineos(astobj,lineno_increment):
         pass
     pass
 
-    
+def py275_exec_bug_workaround(codeobj,globs,locs):
+    """Workaround for bug in Python 2.7.5 where if we exec
+directly inside a nested function we get an error"""
+
+    exec(codeobj,globs,locs)
+    pass
+
 
 def scriptify(callable):
 
@@ -99,7 +105,7 @@ def scriptify(callable):
     #assert(syntree.body[0].__class__ is ast.FunctionDef)
 
     args = synsubtree.args.args
-    argnames = [ arg.id for arg in args ]
+    argnames = [ arg.id if hasattr(arg,"id") else arg.arg for arg in args ]
     
     # Extract default arguments
     assert((len(synsubtree.args.defaults) == 0 and callable.__defaults__ is None) or len(synsubtree.args.defaults) == len(callable.__defaults__))
@@ -169,8 +175,10 @@ def scriptify(callable):
         #        pass
         #    pass
         
-        # execute!
-        exec(codeobj,context,context)
+        # execute!        
+        #exec(codeobj,context,context)
+
+        py275_exec_bug_workaround(codeobj,context,context)
         if has_return:
             retval=context["_fas_returnval"]
             pass
