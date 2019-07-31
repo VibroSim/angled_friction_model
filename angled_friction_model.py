@@ -16,16 +16,16 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           numdraws,
                           E,nu,
                           sigma_yield,tau_yield,
-                          friction_coefficient,
+                          friction_coefficient,  # ADJUSTABLE
                           closure_stress,
-                          beta_drawfunc,
+                          beta_drawfunc, 
                           a_crack,
                           static_load,
                           vib_normal_stress_ampl,
                           vib_shear_stress_ampl,
                           vibration_frequency,
                           crack_model_normal,
-                          crack_model_shear,
+                          crack_model_shear,  # ADJUSTABLE shear sensitivity factor? 
                           verbose,doplots):
 
   power_per_m2 = np.zeros((xrange.shape[0]),dtype='d')
@@ -33,7 +33,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
   numsteps=xrange.shape[0]
 
   # soft closure parameters
-  Hm = 10e6/(100e-9**(3.0/2.0))  # rough order of magnitude guess
+  Hm = 10e6/(100e-9**(3.0/2.0))  # rough order of magnitude guess... should be ADJUSTABLE?
 
   scp = soft_closure.sc_params.fromcrackgeom(crack_model_normal,x_bnd[-1],numsteps+1,a_crack,1,Hm)
 
@@ -134,10 +134,11 @@ def angled_friction_model(x_bnd,xrange,xstep,
       print("sigma_sub[%d]=%f; sigma_add[%d]=%f" % (xcnt,sigma_sub[xcnt],xcnt,sigma_add[xcnt]))
       pass
     
-    # uyy is double calculated value because each side moves by this much
-    uyy_add = tensile_displ_add[xcnt]*2.0
+    # uyy is directly calculated value because soft closure model
+    # already doubles displacement from the fracture mechanics formula
+    uyy_add = tensile_displ_add[xcnt]*1.0
 
-    uyy_sub = tensile_displ_sub[xcnt]*2.0
+    uyy_sub = tensile_displ_sub[xcnt]*1.0
 
     # sigma_sub and sigma_add are positive tensile representations of the
     # normal tractions on the crack surfaces.
