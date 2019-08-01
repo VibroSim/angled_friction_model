@@ -1,6 +1,5 @@
-import scipy 
+oimport scipy 
 import numpy as np
-from matplotlib import pyplot as pl
 from scipy.integrate import quad
 from scipy.optimize import newton
 from numpy.random import rand
@@ -18,16 +17,20 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           sigma_yield,tau_yield,
                           friction_coefficient,  # ADJUSTABLE
                           closure_stress,
-                          beta_drawfunc, 
+                          angular_stddev, 
                           a_crack,
                           static_load,
                           vib_normal_stress_ampl,
                           vib_shear_stress_ampl,
                           vibration_frequency,
                           crack_model_normal,
-                          crack_model_shear,  # ADJUSTABLE shear sensitivity factor? 
+                          crack_model_shear,  
+                          crack_model_shear_factor, # ADJUSTABLE shear sensitivity factor (nominally 1.0)
+                          
                           verbose,doplots):
 
+  
+  
   power_per_m2 = np.zeros((xrange.shape[0]),dtype='d')
   vibration_ampl = np.zeros((xrange.shape[0]),dtype='d')
   numsteps=xrange.shape[0]
@@ -247,7 +250,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
     # Per number of draws because we assume that the stress
     # is distributed over the asperities.
     #Q_dynamic = vib_shear_stress_ampl*xstep*np.pi*r/(2.0*numdraws)
-    Q_dynamic = ((tau_add[xcnt]+tau_sub[xcnt])/2.0)*xstep*np.pi*x/(2.0*numdraws)
+    Q_dynamic = ((tau_add[xcnt]+tau_sub[xcnt])*crack_model_shear_factor/2.0)*xstep*np.pi*x/(2.0*numdraws)
     
     N_dynamic = P_dynamic*np.cos(beta_draws)+Q_dynamic*np.sin(beta_draws)
     T_dynamic = -P_dynamic*np.sin(beta_draws)+Q_dynamic*np.cos(beta_draws)
@@ -278,7 +281,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
     # to be comparable to N_dynamic and or T_dynamic
     slip=np.abs(T_dynamic) >=  -friction_coefficient*(N_static/numdraws+np.abs(N_dynamic))
 
-    utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])/2.0
+    utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor/2.0
     PP_vibration_y=uyy_add-uyy_sub
     vibration_ampl[xcnt]=PP_vibration_y/2.0
     #PP_vibration_t=utt*2.0
@@ -317,6 +320,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
 
   if (doplots):
+    from matplotlib import pyplot as pl
     #betarange=np.linspace(-np.pi,np.pi,800)
     #pl.figure()
     #pl.clf()

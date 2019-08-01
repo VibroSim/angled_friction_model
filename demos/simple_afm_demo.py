@@ -11,9 +11,9 @@ from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midl
 
 from function_as_script import scriptify
 
-#from angled_friction_model import angled_friction_model
-from angled_friction_model import angled_friction_model as angled_friction_model_function
-angled_friction_model = scriptify(angled_friction_model_function)
+from angled_friction_model.angled_friction_model import angled_friction_model
+#from angled_friction_model.angled_friction_model import angled_friction_model as angled_friction_model_function
+#angled_friction_model = scriptify(angled_friction_model_function)
 
 
 
