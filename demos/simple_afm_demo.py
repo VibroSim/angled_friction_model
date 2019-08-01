@@ -44,7 +44,8 @@ vib_shear_stress_ampl = 0.0*15e6  # Assume shear amplitude peaks simultaneously 
 
 assert(len(beta_components)==1 and beta_components[0][0]==1.0)
 
-beta_drawfunc = lambda x: np.random.randn()*beta_components[0][2]+beta_components[0][1]
+#beta_drawfunc = lambda x: np.random.randn()*beta_components[0][2]+beta_components[0][1]
+angular_stddev = beta_components[0][2]
 
 
 # crackclosuresim parameters
@@ -94,6 +95,8 @@ numsteps = num_boundary_steps-1
 xstep = (xmax)/(numsteps)
 numdraws=20 # draws per step
 
+msqrtR = 1000.0e6 * np.sqrt(15e-6) # asperity density (asperities/m^2) * sqrt(contact radius) (sqrt(m))
+
 x_bnd = xstep*np.arange(num_boundary_steps) # 
 xrange = (x_bnd[1:] + x_bnd[:-1])/2.0
 
@@ -110,7 +113,7 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
                                               sigma_yield,tau_yield,
                                               friction_coefficient,
                                               closure_stress_leftside,
-                                              beta_drawfunc,
+                                              angular_stddev,
                                               aleft,
                                               static_load,
                                               vib_normal_stress_ampl,
@@ -118,6 +121,8 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
                                               vibration_frequency,
                                               crack_model_normal,
                                               crack_model_shear,
+                                              1.0,
+                                              msqrtR,
                                               verbose,
                                               doplots)
 
@@ -128,7 +133,7 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
                                                sigma_yield,tau_yield,
                                                friction_coefficient,
                                                closure_stress_rightside,
-                                               beta_drawfunc,
+                                               angular_stddev,
                                                aright,
                                                static_load,
                                                vib_normal_stress_ampl,
@@ -136,6 +141,8 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
                                                vibration_frequency,
                                                crack_model_normal,
                                                crack_model_shear,
+                                               1.0,
+                                               msqrtR,
                                                verbose,
                                                doplots)
 

@@ -47,7 +47,8 @@ static_load=60e6  # tensile static load of 60MPa
 
 assert(len(beta_components)==1 and beta_components[0][0]==1.0)
 
-beta_drawfunc = lambda x: np.random.randn()*beta_components[0][2]+beta_components[0][1]
+#beta_drawfunc = lambda x: np.random.randn()*beta_components[0][2]+beta_components[0][1]
+angular_stddev = beta_components[0][2]
 
 
 # crackclosuresim parameters
@@ -97,6 +98,8 @@ numsteps = num_boundary_steps-1
 xstep = (xmax)/(numsteps)
 numdraws=20 # draws per step
 
+msqrtR = 1000.0e6 * np.sqrt(15e-6) # asperity density (asperities/m^2) * sqrt(contact radius) (sqrt(m))
+
 x_bnd = xstep*np.arange(num_boundary_steps) # 
 xrange = (x_bnd[1:] + x_bnd[:-1])/2.0
 
@@ -109,6 +112,8 @@ closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_
 vib_ampls = np.arange(0.0,70.0e6,5.0e6)
 
 total_heating_right=np.zeros(vib_ampls.shape,dtype='d')
+
+
 
 for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitude. 
     vib_normal_stress_ampl=vib_ampls[ampl_idx]
@@ -123,7 +128,7 @@ for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitud
                                                    sigma_yield,tau_yield,
                                                    friction_coefficient,
                                                    closure_stress_rightside,
-                                                   beta_drawfunc,
+                                                   angular_stddev, # beta_drawfunc,
                                                    aright,
                                                    static_load,
                                                    vib_normal_stress_ampl,
@@ -131,6 +136,8 @@ for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitud
                                                    vibration_frequency,
                                                    crack_model_normal,
                                                    crack_model_shear,
+                                                   1.0,
+                                                   msqrtR,
                                                    verbose,
                                                    doplots)
     

@@ -1,14 +1,17 @@
-oimport scipy 
+import scipy 
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import newton
 from numpy.random import rand
 
 
+
 from crackclosuresim2 import crackopening_from_tensile_closure
 from crackclosuresim2 import solve_normalstress
 from crackclosuresim2 import solve_shearstress
 from crackclosuresim2 import soft_closure
+
+from .asperity_stiffness import asperity_stiffness
 
 
 def angled_friction_model(x_bnd,xrange,xstep,
@@ -26,18 +29,21 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           crack_model_normal,
                           crack_model_shear,  
                           crack_model_shear_factor, # ADJUSTABLE shear sensitivity factor (nominally 1.0)
-                          
+                          msqrtR, # ADJUSTABLE asperity density * sqrt(asperity radius)
                           verbose,doplots):
 
-  
+
+  beta_drawfunc = lambda x: np.random.randn()*angular_stddev + 0.0
   
   power_per_m2 = np.zeros((xrange.shape[0]),dtype='d')
   vibration_ampl = np.zeros((xrange.shape[0]),dtype='d')
   numsteps=xrange.shape[0]
 
   # soft closure parameters
-  Hm = 10e6/(100e-9**(3.0/2.0))  # rough order of magnitude guess... should be ADJUSTABLE?
+  #Hm = 10e6/(100e-9**(3.0/2.0))  # rough order of magnitude guess... should be ADJUSTABLE?
+  Hm = asperity_stiffness(msqrtR,E,nu,angular_stddev)
 
+  
   scp = soft_closure.sc_params.fromcrackgeom(crack_model_normal,x_bnd[-1],numsteps+1,a_crack,1,Hm)
 
   crack_initial_opening = crackopening_from_tensile_closure(scp.x,scp.x_bnd,closure_stress,scp.dx,scp.a,sigma_yield,crack_model_normal)
