@@ -66,7 +66,8 @@ else:
 angledfrictionmodel_package_files = [ "pt_steps/*" ]
 
 #ext_modules=cythonize("angled_friction_model/*.pyx")
-#em_dict=dict([ (module.name,module) for module in ext_modules])
+ext_modules=[]
+em_dict=dict([ (module.name,module) for module in ext_modules])
 #sca_pyx_ext=em_dict["crackclosuresim2.soft_closure_accel"]
 #sca_pyx_ext.include_dirs=["."]
 ##sca_pyx_ext.extra_compile_args=['-O0','-g','-Wno-uninitialized']
