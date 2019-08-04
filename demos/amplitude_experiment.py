@@ -1,39 +1,31 @@
+import sys
+import os
+import os.path
+import tempfile
 import scipy 
 import numpy as np
 from matplotlib import pyplot as pl
 
 from crackclosuresim2 import inverse_closure
+from crackclosuresim2 import crackopening_from_tensile_closure
+
+from crackclosuresim2 import ModeI_throughcrack_CODformula
 from crackclosuresim2 import Tada_ModeI_CircularCrack_along_midline
 from crackclosuresim2 import ModeII_throughcrack_CSDformula
 from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midline
 
-## !!!*** WARNING: THERE IS BIZARRE BEHAVIOR WHEN THE NET
-## LOAD DURING A VIBRATION CYCLE GOES ZERO OR NEGATIVE:
-## WE SEE A LARGE INCREMENT IN HEATING AT THE LARGEST
-## VIB AMPLITUDES.
-## CURIOUSLY, SETTING THE STATIC LOAD TO BE SMALLER
-## IN SIMPLE_AFM_DEMO.PY DOESN'T SEEM TO GIVE THE SAME
-## EFFECT (?) WHATEVER IT IS MUST CERTAINLY BE NON-PHYSICAL!!!
 
-from function_as_script import scriptify
+#from function_as_script import scriptify
 
 from angled_friction_model.angled_friction_model import angled_friction_model
 #from angled_friction_model.angled_friction_model import angled_friction_model as angled_friction_model_function
 #angled_friction_model = scriptify(angled_friction_model_function)
 
 
+doplots=False  # extra plots from angled friction model
+verbose=False  # More verbose prints from angled fiction model
 
-doplots=True
-verbose=False
 
-i=(0+1j) # imaginary number
-
-# pdf (need not be normalized) of surface orientation beta
-# domain: -pi (backwards trajectory, infinitesimally downward)
-# to pi (backwards trajectory, infinitesimally upward)
-
-# note: our beta is 90deg - evans and hutchinson beta
-beta_components = ( (1.0,0.0,28*np.pi/180.0), )  # Each entry: component magnitude, gaussian mean, Gaussian sigma
 
 friction_coefficient=0.3
 
@@ -42,75 +34,92 @@ vibration_frequency=20e3  # (Hz)
 static_load=60e6  # tensile static load of 60MPa
 # assume also that there is no synergy between heating from different modes. 
 
-# x is position along crack (currently no x dependence to beta 
-#beta_unnorm_pdf = lambda beta,x:  np.array([ (magnitude/np.sqrt(2*np.pi*sigma**2)) * np.exp(-(beta - mean)**2/(2.0*sigma**2.0)) for (magnitude,mean,sigma) in beta_components ],dtype='d').sum(0)
+# Standard deviation representing crack surface tortuosity
+angular_stddev = 28*np.pi/180.0
 
-assert(len(beta_components)==1 and beta_components[0][0]==1.0)
-
-#beta_drawfunc = lambda x: np.random.randn()*beta_components[0][2]+beta_components[0][1]
-angular_stddev = beta_components[0][2]
+numdraws=20 # Number of draws from crack tortuosity  per step
 
 
-# crackclosuresim parameters
-# Low K
-#E = 109e9
-nu = 0.33
-E = 207.83e9 # Plane stress
-sigma_yield=600e6 # CHECK THIS NUMBER
+# material parameters
+# Youngs modulus, Poisson's ratio
+E = 207.83e9  # Measured number from UTCB specimen set (Pa)
+nu = 0.294 # Measured number from UTCB specimen set
+sigma_yield=1182e6 # Material certification from UTCB specimen set
 tau_yield=sigma_yield/2.0
-#E = 207.83e9/(1.0-nu**2.0) # Plane strain
 G=E/(2*(1+nu))
-width=25.4e-3
 
+# Soft closure model parameter:
+msqrtR = 1000.0e6 * np.sqrt(15e-6) # asperity density (asperities/m^2) * sqrt(contact radius) (sqrt(m))
+
+# Select crack models for normal and shear loading
+
+#crack_model_normal = ModeI throughcrack_CODformula(E)
 crack_model_normal = Tada_ModeI_CircularCrack_along_midline(E,nu)
 #crack_model_shear = ModeII_throughcrack_CSDformula(E,nu)
 crack_model_shear = Fabrikant_ModeII_CircularCrack_along_midline(E,nu)
 
 
-# units of meters? half-crack lengths for a surface crack  
+xmax = 2e-3  # Maximum position from center to calculate to;
+             # should exceed half-crack lengths 
+
+# Desired approximate step size for calculations
+approximate_xstep=25e-6 # 25um
+
+# Define actual step size and the range of positions over
+# which we will calculate
+num_boundary_steps=int((xmax)//approximate_xstep)
+numsteps = num_boundary_steps-1
+xstep = (xmax)/(numsteps) # Actual step size so that xmax is a perfect multiple of this number
+
+
+x_bnd = xstep*np.arange(num_boundary_steps) # Position of element boundaries
+xrange = (x_bnd[1:] + x_bnd[:-1])/2.0 # Position of element centers
+
+
+# Here we evaluate crack closure state from a series of observed
+# effective crack lengths.
+
+#   (alternatively we could define closure_stress_leftside, aleft,
+#   closure_stress_rightside, and aright directly)
+
+
+# half-crack lengths for the right-hand side (meters)
 reff_rightside=np.array([ .5e-3, .7e-3, .9e-3, 1.05e-3, 1.2e-3, 1.33e-3, 1.45e-3, 1.56e-3, 1.66e-3],dtype='d')
 
-# opening stresses, units of Pa
+# Corresponding opening stresses, units of Pa
 seff_rightside=np.array([ -150e6, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
 
-# units of meters? half-crack lengths for a surface crack  
+# half-crack lengths for the left-hand side (meters)
 reff_leftside=np.array([ .5e-3, .7e-3, .9e-3, 1.05e-3, 1.2e-3, 1.33e-3, 1.45e-3, 1.56e-3, 1.66e-3],dtype='d')
 
-# opening stresses, units of Pa
+# Corresponding opening stresses, units of Pa
 seff_leftside=np.array([ -150e6, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
 
 
 
-
-
-
-
-aleft=np.max(reff_leftside) # NOTE CHANGED SIGN OF aleft
+# Fully open crack lengths for left and right side
+aleft=np.max(reff_leftside) 
 aright=np.max(reff_rightside)
 
-xmax = 2e-3
-assert(xmax > aleft)
-assert(xmax > aright)
-
-approximate_xstep=25e-6 # 25um
-num_boundary_steps=int((xmax)//approximate_xstep)
-numsteps = num_boundary_steps-1
-xstep = (xmax)/(numsteps)
-numdraws=20 # draws per step
-
-msqrtR = 1000.0e6 * np.sqrt(15e-6) # asperity density (asperities/m^2) * sqrt(contact radius) (sqrt(m))
-
-x_bnd = xstep*np.arange(num_boundary_steps) # 
-xrange = (x_bnd[1:] + x_bnd[:-1])/2.0
+assert(aleft < xmax) # Increase xmax if either of these assertions fail
+assert(aright < xmax)
 
 
+# Determine closure stress field from observed crack length data
 closure_stress_leftside=inverse_closure(reff_leftside,seff_leftside,xrange,x_bnd,xstep,aleft,sigma_yield,crack_model_normal,verbose=verbose)
 closure_stress_rightside=inverse_closure(reff_rightside,seff_rightside,xrange,x_bnd,xstep,aright,sigma_yield,crack_model_normal,verbose=verbose)
 
 
+# Evaluate initial crack opening gaps from extrapolated tensile closure field
+crack_initial_opening_leftside = crackopening_from_tensile_closure(xrange,x_bnd,closure_stress_leftside,xstep,aleft,sigma_yield,crack_model_normal)
 
+crack_initial_opening_rightside = crackopening_from_tensile_closure(xrange,x_bnd,closure_stress_rightside,xstep,aright,sigma_yield,crack_model_normal)
+
+
+# Range of vibration amplitudes
 vib_ampls = np.arange(0.0,70.0e6,5.0e6)
 
+# Array to store total calculated heating
 total_heating_right=np.zeros(vib_ampls.shape,dtype='d')
 
 
@@ -118,8 +127,7 @@ total_heating_right=np.zeros(vib_ampls.shape,dtype='d')
 for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitude. 
     vib_normal_stress_ampl=vib_ampls[ampl_idx]
     vib_shear_stress_ampl = 0.0 # assume 0 shear
-    #vib_shear_stress_ampl = vib_normal_stress_ampl  # Assume shear amplitude peaks simultaneously with
-# normal stress. 
+    #vib_shear_stress_ampl = vib_normal_stress_ampl  # Assume shear amplitude same as normal stress
     
     (power_per_m2_right,
      vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
@@ -128,6 +136,7 @@ for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitud
                                                    sigma_yield,tau_yield,
                                                    friction_coefficient,
                                                    closure_stress_rightside,
+                                                   crack_initial_opening_rightside,
                                                    angular_stddev, # beta_drawfunc,
                                                    aright,
                                                    static_load,
@@ -151,9 +160,9 @@ pl.grid()
 pl.xlabel('Vibration amplitude (MPa)')
 pl.ylabel('Heating power (mW)')
 pl.title('static load = %f MPa' % (static_load/1e6))
-pl.savefig('/tmp/amplitude_experiment_%fMPa.png' % (static_load/1e6),dpi=300)
-#pl.show()
+# Save png image of figure in system temporary directory
+pl.savefig(os.path.join(tempfile.gettempdir(),'amplitude_experiment_%fMPa.png' % (static_load/1e6)),dpi=300)
 
 
-pl.show()
+pl.show()  # Display figures
 

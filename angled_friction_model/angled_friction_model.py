@@ -20,6 +20,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           sigma_yield,tau_yield,
                           friction_coefficient,  # ADJUSTABLE
                           closure_stress,
+                          crack_initial_opening,
                           angular_stddev, 
                           a_crack,
                           static_load,
@@ -45,8 +46,6 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
   
   scp = soft_closure.sc_params.fromcrackgeom(crack_model_normal,x_bnd[-1],numsteps+1,a_crack,1,Hm)
-
-  crack_initial_opening = crackopening_from_tensile_closure(scp.x,scp.x_bnd,closure_stress,scp.dx,scp.a,sigma_yield,crack_model_normal)
 
   
   closure_stress_softmodel = closure_stress.copy()

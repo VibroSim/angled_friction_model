@@ -66,6 +66,8 @@ else:
     version = "UNKNOWN"
     pass
 
+print("version = %s" % (version))
+
 angledfrictionmodel_package_files = [ "pt_steps/*" ]
 
 #ext_modules=cythonize("angled_friction_model/*.pyx")
