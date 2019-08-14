@@ -171,9 +171,9 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # -sigma_sub and -sigma_add respectively. 
       
       # ss variables are for shear_stickslip calculations
-      (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
+      (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
       
-      (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient,tau_yield,crack_model_shear)
+      (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
     
       
       # Warning: We are not requiring shear continuity between left and right
@@ -301,13 +301,13 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # is opposed by N_dynamic
       # sdh 11/6/18 N_static is total load... must be divided by numdraws
       # to be comparable to N_dynamic and or T_dynamic
-      slip=np.abs(T_dynamic) >=  -friction_coefficient*(N_static/numdraws+np.abs(N_dynamic))
+      slip=np.abs(T_dynamic) >=  -friction_coefficient[fc_idx]*(N_static/numdraws+np.abs(N_dynamic))
 
       utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor/2.0
       PP_vibration_y=uyy_add-uyy_sub
       vibration_ampl[fc_idx,xcnt]=PP_vibration_y/2.0
       #PP_vibration_t=utt*2.0
-      tangential_vibration_ampl=np.abs(vibration_ampl[xcnt] * np.sin(beta_draws) + utt*np.cos(beta_draws))*slip
+      tangential_vibration_ampl=np.abs(vibration_ampl[fc_idx,xcnt] * np.sin(beta_draws) + utt*np.cos(beta_draws))*slip
       tangential_vibration_velocity_ampl = 2*np.pi*vibration_frequency*tangential_vibration_ampl
     
       # Power = (1/2)Fampl*vampl
@@ -328,7 +328,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # sdh 11/6/18 N_static is total load... must be divided by numdraws
       # to be comparable to N_dynamic and or T_dynamic
       if x >= closure_point_sub:
-        Power = 0.5 * (friction_coefficient*(np.abs(N_static)/numdraws+np.abs(N_dynamic)))*tangential_vibration_velocity_ampl
+        Power = 0.5 * (friction_coefficient[fc_idx]*(np.abs(N_static)/numdraws+np.abs(N_dynamic)))*tangential_vibration_velocity_ampl
         pass
       else:
         Power=0.0
