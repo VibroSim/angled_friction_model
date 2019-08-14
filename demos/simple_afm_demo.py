@@ -16,6 +16,7 @@ from crackclosuresim2 import ModeII_throughcrack_CSDformula
 from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midline
 
 from angled_friction_model.angled_friction_model import angled_friction_model
+from angled_friction_model.angled_friction_model import integrate_power
 
 
 
@@ -142,6 +143,7 @@ pl.title('Crack closure state')
 
 # Now calculate crack heating under the given conditions
 (power_per_m2_left,
+ power_per_m2_stddev_left,
  vibration_ampl_left) = angled_friction_model(x_bnd,xrange,xstep,
                                               numdraws,
                                               E,nu,
@@ -163,6 +165,7 @@ pl.title('Crack closure state')
                                               doplots)
 
 (power_per_m2_right,
+ power_per_m2_stddev_right,
  vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
                                                numdraws,
                                                E,nu,
@@ -183,6 +186,8 @@ pl.title('Crack closure state')
                                                verbose,
                                                doplots)
 
+(totalpower,
+ totalpower_stddev) = integrate_power(xrange,power_per_m2_left,power_per_m2_left_stddev) + integrate_power(xrange,power_per_m2_right,power_per_m2_right_stddev)
 
 pl.figure()
 pl.clf()
