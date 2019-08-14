@@ -383,6 +383,6 @@ def integrate_power(xrange,power_per_m2,power_per_m2_stddev):
   dx=abs(xrange[1]-xrange[0])
   slice_area = dx * np.pi*abs(xrange)/2.0 
   totalpower = np.sum(power_per_m2*slice_area,axis=len(power_per_m2.shape)-1)
-  totalpower_stddev = np.sum(power_per_m2_stddev*slice_area,axis=len(power_per_m2.shape)-1)
+  totalpower_stddev = np.sqrt(np.sum(power_per_m2_stddev**2.0 * slice_area**2.0,axis=len(power_per_m2.shape)-1))
   return (totalpower,totalpower_stddev)
   
