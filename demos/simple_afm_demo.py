@@ -186,8 +186,10 @@ pl.title('Crack closure state')
                                                verbose,
                                                doplots)
 
-(totalpower,
- totalpower_stddev) = integrate_power(xrange,power_per_m2_left,power_per_m2_left_stddev) + integrate_power(xrange,power_per_m2_right,power_per_m2_right_stddev)
+(totalpower_left, totalpower_stddev_left) = integrate_power(xrange,power_per_m2_left,power_per_m2_left_stddev)
+(totalpower_right, totalpower_stddev_right) = integrate_power(xrange,power_per_m2_right,power_per_m2_right_stddev)
+
+totalpower=totalpower_left + totalpower_right
 
 pl.figure()
 pl.clf()
