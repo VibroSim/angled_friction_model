@@ -28,7 +28,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           crack_initial_opening,
                           angular_stddev, 
                           a_crack,
-                          static_load,
+                          static_load, # Positive tensile
                           vib_normal_stress_ampl,
                           vib_shear_stress_ampl,
                           vibration_frequency,
@@ -53,7 +53,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
   
   closure_stress_softmodel = closure_stress.copy()
 
-  # In the soft closure model, sigma_closure can't be negativej
+  # In the soft closure model, sigma_closure (positive compression) can't be negativej
   # (use crack_initial_opening values instead in that domain)
 
   closure_stress_softmodel[closure_stress_softmodel < 0.0]=0.0
@@ -68,7 +68,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
   # Apply static_load as a bias... see crackclosuresim2/demos/softclosure_test_bias_load.py
   
-  # Evaluate contact stress on both sides of static load
+  # Evaluate contact stress on both sides of static load... contact_stress_static is positive compression
   (du_da_static,contact_stress_static,tensile_displ_static)=soft_closure.calc_contact(scp,static_load)
 
   # Apply the static load as a bias load now part of the crack state. see crackclosuresim2/demos/softclosure_test_bias_load.py
@@ -76,7 +76,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
   (du_da_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,-vib_normal_stress_ampl)
   (du_da_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,vib_normal_stress_ampl)
 
-  sigma_sub=-contact_stress_sub
+  sigma_sub=-contact_stress_sub  # sigma_sub and sigma_add are positive tensile
   sigma_add=-contact_stress_add
 
   sub_notopening = np.where(tensile_displ_sub < 0)[0]
@@ -226,18 +226,19 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # that we are trying to match
       # ... We match P (normal)  and don't worry too much about Q (shear)
       Q_static_nominal=0.0
+      # P positive compressive
       P_static_nominal=closure_state_x * xstep * np.pi*x/2.0 # A force, total for all of the little contributions from each of the draws
       
       # For each draw, transform nominal Q and P to 
       # Normal and shear forces on the sliding point.
-      N_static_nominal=P_static_nominal*np.cos(beta_draws)+Q_static_nominal*np.sin(beta_draws)
-      # T_static_nominal = -P_static_nominal*np.sin(beta_draws) + Q_static_nominal*np.cos(beta_draws)
+      N_static_nominal=P_static_nominal/numdraws*np.cos(beta_draws)+Q_static_nominal/numdraws*np.sin(beta_draws)
+      # T_static_nominal = -P_static_nominal/numdraws*np.sin(beta_draws) + Q_static_nominal/numdraws*np.cos(beta_draws)
       # Set T_static_nominal to zero because we don't expect any long-term
       # static shear on the asperity contacts
       T_static_nominal=0.0
     
       # Transform back to P and Q... sum contributions from all draws
-      P_contributions=np.mean(N_static_nominal*np.cos(beta_draws) - T_static_nominal*np.sin(beta_draws))
+      P_contributions=np.sum(N_static_nominal*np.cos(beta_draws) - T_static_nominal*np.sin(beta_draws))
       #Q_contributions=np.sum(N_static_nominal*np.sin(beta_draws) + T_static_nominal*np.cos(beta_draws))
       
       # Determine scaling factor for all draws to sum to desired value
@@ -261,7 +262,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       
       #N_static = P_static*np.cos(beta_draws)+Q_static*np.sin(beta_draws)
       #T_static = -P_static*np.sin(beta_draws)+Q_static*np.cos(beta_draws)
-      N_static = N_static_nominal*normal_force_factor
+      N_static = N_static_nominal*normal_force_factor # Per draw
       T_static = T_static_nominal*normal_force_factor  # 0
       
       P_static = N_static*np.cos(beta_draws) - T_static*np.sin(beta_draws)
@@ -270,12 +271,12 @@ def angled_friction_model(x_bnd,xrange,xstep,
       
       # NOTE:
       # N_static, T_static, P_static, and Q_static
-      # are total for the entire band.
+      # are per draw for the entire band.
       # P_dynamic, Q_dynamic N_dynamic, and T_dynamic
       # will be __per_draw__
       
       # P_dynamic per draw
-      P_dynamic = (closure_state_add_x - closure_state_sub_x)* (xstep * np.pi*x/2.0)/(2.0*numdraws) # dynamic stress amplitude (extra factor of two converts peak-to-peak to amplitude)
+      P_dynamic = (closure_state_sub_x - closure_state_add_x)* (xstep * np.pi*x/2.0)/(2.0*numdraws) # dynamic stress amplitude (extra factor of two converts peak-to-peak to amplitude)
       
       # For the moment, just make the shear correct near the surface
       # because that's where we have data
@@ -310,9 +311,8 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # sdh 11/6/18 .... change N_static-abs(N_dynamic) to N_static + abs(N_dynamic)
       # because slip occurs in easier case where compressive (negative) N_static
       # is opposed by N_dynamic
-      # sdh 11/6/18 N_static is total load... must be divided by numdraws
-      # to be comparable to N_dynamic and or T_dynamic
-      slip=np.abs(T_dynamic) >=  -friction_coefficient[fc_idx]*(N_static/numdraws+np.abs(N_dynamic))
+      # sdh 1/10/20 N_static is per draw ... comparable to N_dynamic and or T_dynamic
+      slip=np.abs(T_dynamic) >=  -friction_coefficient[fc_idx]*(N_static+np.abs(N_dynamic))
 
       utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor/2.0
       PP_vibration_y=uyy_add-uyy_sub
@@ -336,10 +336,9 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # P=uNv = u(Nstatic+Ndynamic)v=u(Cn1 + Cn2v)v
       
       # (Note: N_static term was missing from original calculation)
-      # sdh 11/6/18 N_static is total load... must be divided by numdraws
-      # to be comparable to N_dynamic and or T_dynamic
+      # sdh 1/10/20 N_static is per draw... comparable to N_dynamic and or T_dynamic
       if x >= closure_point_sub:
-        Power = 0.5 * (friction_coefficient[fc_idx]*(np.abs(N_static)/numdraws+np.abs(N_dynamic)))*tangential_vibration_velocity_ampl
+        Power = 0.5 * (friction_coefficient[fc_idx]*(np.abs(N_static)+np.abs(N_dynamic)))*tangential_vibration_velocity_ampl
         pass
       else:
         Power=0.0
