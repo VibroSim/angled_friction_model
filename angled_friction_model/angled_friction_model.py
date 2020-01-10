@@ -67,6 +67,8 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
   
   # Evaluate contact stress on both sides of static load
+  (du_da_static,contact_stress_static,tensile_displ_static)=soft_closure.calc_contact(scp,static_load)
+  
   (du_da_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
   (du_da_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
 
@@ -136,7 +138,9 @@ def angled_friction_model(x_bnd,xrange,xstep,
       
       
       #closure_state_x = splev(x,stress_field_spl,ext=1) 
-      closure_state_x = closure_stress[xcnt]
+      #closure_state_x = closure_stress[xcnt]
+      #print("closure_stress[%d]=%f; contact_stress_static[%d]=%f" % (xcnt,closure_stress[xcnt],xcnt,contact_stress_static[xcnt]))
+      closure_state_x = contact_stress_static[xcnt]
       
       
       
