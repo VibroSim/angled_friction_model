@@ -65,12 +65,16 @@ def angled_friction_model(x_bnd,xrange,xstep,
   # of crack_initial_opening based on the closure stress profile
   scp.initialize_contact(closure_stress_softmodel,crack_initial_opening)
 
+
+  # Apply static_load as a bias... see crackclosuresim2/demos/softclosure_test_bias_load.py
   
   # Evaluate contact stress on both sides of static load
   (du_da_static,contact_stress_static,tensile_displ_static)=soft_closure.calc_contact(scp,static_load)
-  
-  (du_da_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
-  (du_da_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
+
+  # Apply the static load as a bias load now part of the crack state. see crackclosuresim2/demos/softclosure_test_bias_load.py
+  scp.setcrackstate(contact_stress_static,tensile_displ_static + (contact_stress_static/scp.Hm)**(2.0/3.0))
+  (du_da_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,-vib_normal_stress_ampl)
+  (du_da_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,vib_normal_stress_ampl)
 
   sigma_sub=-contact_stress_sub
   sigma_add=-contact_stress_add
