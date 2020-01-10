@@ -237,7 +237,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       T_static_nominal=0.0
     
       # Transform back to P and Q... sum contributions from all draws
-      P_contributions=np.sum(N_static_nominal*np.cos(beta_draws) - T_static_nominal*np.sin(beta_draws))
+      P_contributions=np.mean(N_static_nominal*np.cos(beta_draws) - T_static_nominal*np.sin(beta_draws))
       #Q_contributions=np.sum(N_static_nominal*np.sin(beta_draws) + T_static_nominal*np.cos(beta_draws))
       
       # Determine scaling factor for all draws to sum to desired value
@@ -251,7 +251,9 @@ def angled_friction_model(x_bnd,xrange,xstep,
       if not np.isfinite(normal_force_factor):
         normal_force_factor=1.0  # in case P_contributions are 0 just set scaling factor to 1.0
         pass
+
       
+      #print("normal_force_factor=%f" % (normal_force_factor))
       
       # Evaluate P,Q, N, & T assuming this scaling factor
       #P_static = P_static_nominal*normal_force_factor
