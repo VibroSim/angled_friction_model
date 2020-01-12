@@ -312,7 +312,12 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # because slip occurs in easier case where compressive (negative) N_static
       # is opposed by N_dynamic
       # sdh 1/10/20 N_static is per draw, positive compression ... comparable to N_dynamic and or T_dynamic
-      slip=(np.abs(T_dynamic) >=  friction_coefficient[fc_idx]*(N_static)) & (N_static > 0.0)
+
+      N_minimum = N_static-N_dynamic
+      N_maximum = N_static+N_dynamic
+      
+      slip=(np.abs(T_dynamic) >=  friction_coefficient[fc_idx]*(N_minimum)) & (N_maximum > 0.0)
+      #slip=(np.tan(np.abs(beta_draws)) > friction_coefficient) & (np.abs(beta_draws) <= np.pi/2.0)
       for pcnt in range(numdraws):
         print("xcnt=%f; abs(T_dynamic)=%f; N_static=%f; slip=%s" % (xcnt,abs(T_dynamic[pcnt]),N_static[pcnt],str(slip[pcnt])))
         pass
