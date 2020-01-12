@@ -44,11 +44,11 @@ def angled_friction_model(x_bnd,xrange,xstep,
   numsteps=xrange.shape[0]
 
   # soft closure parameters
-  #Hm = 10e6/(100e-9**(3.0/2.0))  # rough order of magnitude guess... should be ADJUSTABLE?
-  Hm = asperity_stiffness(msqrtR,E,nu,angular_stddev)
+  #Lm = 10e6/(100e-9**(3.0/2.0))  # rough order of magnitude guess... should be ADJUSTABLE?
+  Lm = asperity_stiffness(msqrtR,E,nu,angular_stddev)
 
   
-  scp = soft_closure.sc_params.fromcrackgeom(crack_model_normal,x_bnd[-1],numsteps+1,a_crack,1,Hm)
+  scp = soft_closure.sc_params.fromcrackgeom(crack_model_normal,x_bnd[-1],numsteps+1,a_crack,1,Lm)
 
   
   closure_stress_softmodel = closure_stress.copy()
@@ -65,16 +65,10 @@ def angled_friction_model(x_bnd,xrange,xstep,
   # of crack_initial_opening based on the closure stress profile
   scp.initialize_contact(closure_stress_softmodel,crack_initial_opening)
 
+  # Evaluate contact stress on both sides of static load
+  (du_da_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
+  (du_da_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
 
-  # Apply static_load as a bias... see crackclosuresim2/demos/softclosure_test_bias_load.py
-  
-  # Evaluate contact stress on both sides of static load... contact_stress_static is positive compression
-  (du_da_static,contact_stress_static,tensile_displ_static)=soft_closure.calc_contact(scp,static_load)
-
-  # Apply the static load as a bias load now part of the crack state. see crackclosuresim2/demos/softclosure_test_bias_load.py
-  scp.setcrackstate(contact_stress_static,tensile_displ_static + (contact_stress_static/scp.Hm)**(2.0/3.0))
-  (du_da_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,-vib_normal_stress_ampl)
-  (du_da_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,vib_normal_stress_ampl)
 
   sigma_sub=-contact_stress_sub  # sigma_sub and sigma_add are positive tensile
   sigma_add=-contact_stress_add
@@ -144,7 +138,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       #closure_state_x = splev(x,stress_field_spl,ext=1) 
       #closure_state_x = closure_stress[xcnt]
       #print("closure_stress[%d]=%f; contact_stress_static[%d]=%f" % (xcnt,closure_stress[xcnt],xcnt,contact_stress_static[xcnt]))
-      closure_state_x = contact_stress_static[xcnt]  # positive compression
+      #closure_state_x = contact_stress_static[xcnt]  # positive compression
       
       
       
@@ -208,122 +202,42 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # now consider our draws...
       # We can consider each corresponds to xstep/numdraws units of horizontal
       # distance (but we don't anymore) 
+
+
+      P_sub = -sigma_sub[xcnt] * xstep * np.pi*x/2.0 # Overall force, normal to crack plane, positive compression on a quarter annulus, in the 'sub' state
+      Q_sub = (-(tau_add[xcnt]+tau_sub[xcnt])/2.0)*crack_model_shear_factor*xstep*np.pi*x/2.0 # Overall force, parallel to crack plane, positive compression on a quarter annulus, in the 'sub' state
+
+      P_add = -sigma_add[xcnt] * xstep * np.pi*x/2.0 # Overall force, normal to crack plane, positive compression on a quarter annulus, in the 'add' state
+      Q_add = ((tau_add[xcnt]+tau_sub[xcnt])/2.0)*crack_model_shear_factor*xstep*np.pi*x/2.0 # Overall force, parallel to crack plane, positive compression on a quarter annulus, in the 'add' state
+
+
+      # N_add, T_add, N_sub, T_sub are arrays that are __per_draw__
+      # They represent normal (positive compressive) and shear
+      # force on each asperity
+      N_add = (P_add/numdraws)*np.cos(beta_draws) + (Q_add/numdraws)*np.sin(beta_draws)
+      T_add = -(P_add/numdraws)*np.sin(beta_draws) + (Q_add/numdraws)*np.cos(beta_draws)
+
+      N_sub = (P_sub/numdraws)*np.cos(beta_draws) + (Q_sub/numdraws)*np.sin(beta_draws)
+      T_sub = -(P_sub/numdraws)*np.sin(beta_draws) + (Q_sub/numdraws)*np.cos(beta_draws)
+
+
       
-      # represent stress field along crack as a complex number,
-      # real part is shear, imaginary part is normal stress (following
-      # Evans and Hutchinson Q+iP) except in our case these represent
-      # vibration amplitudes as vertical and horizontal forces on a crack
-      # segment 
-      #
-      # Throughout each vibration cycle,
-      # stresses cycle between  closure_state_add and closure_state_sub
-      
-      # So based on temporary limitation above
-      # (no external shear loading applied), Q=0
       # P and Q are FORCES... treat them as acting on quarter-annulus
     
-      # Nominal P and Q are the external loading on this xstep unit
-      # that we are trying to match
-      # ... We match P (normal)  and don't worry too much about Q (shear)
-      Q_static_nominal=0.0
-      # P positive compressive
-      P_static_nominal=closure_state_x * xstep * np.pi*x/2.0 # A force, total for all of the little contributions from each of the draws
+      slip_sub=(np.abs(T_sub) >=  friction_coefficient[fc_idx]*(N_sub)) & (N_sub > 0.0)
+      slip_add=(np.abs(T_add) >=  friction_coefficient[fc_idx]*(N_add)) & (N_add > 0.0)
+      net_normal = (N_sub+N_add)/2.0 > 0.0 # Is there a net compressive normal stress?
       
-      # For each draw, transform nominal Q and P to 
-      # Normal and shear forces on the sliding point.
-      N_static_nominal=P_static_nominal/numdraws*np.cos(beta_draws)+Q_static_nominal/numdraws*np.sin(beta_draws)
-      # T_static_nominal = -P_static_nominal/numdraws*np.sin(beta_draws) + Q_static_nominal/numdraws*np.cos(beta_draws)
-      # Set T_static_nominal to zero because we don't expect any long-term
-      # static shear on the asperity contacts
-      T_static_nominal=0.0
-    
-      # Transform back to P and Q... sum contributions from all draws
-      P_contributions=np.sum(N_static_nominal*np.cos(beta_draws) - T_static_nominal*np.sin(beta_draws))
-      #Q_contributions=np.sum(N_static_nominal*np.sin(beta_draws) + T_static_nominal*np.cos(beta_draws))
-      
-      # Determine scaling factor for all draws to sum to desired value
-      if P_contributions==0.0: # Avoid warning message
-        normal_force_factor=np.inf
-        pass
-      else:
-        normal_force_factor=P_static_nominal/P_contributions
-        pass
-    
-      if not np.isfinite(normal_force_factor):
-        normal_force_factor=1.0  # in case P_contributions are 0 just set scaling factor to 1.0
-        pass
+      slip = (slip_sub & slip_add) & net_normal  # Consider any asperity that can slip anywhere in the cycle as full slippage, so long as there is overall normal compression
 
-      
-      #print("normal_force_factor=%f" % (normal_force_factor))
-      
-      # Evaluate P,Q, N, & T assuming this scaling factor
-      #P_static = P_static_nominal*normal_force_factor
-      #Q_static = Q_static_nominal*normal_force_factor
-      
-      #N_static = P_static*np.cos(beta_draws)+Q_static*np.sin(beta_draws)
-      #T_static = -P_static*np.sin(beta_draws)+Q_static*np.cos(beta_draws)
-      N_static = N_static_nominal*normal_force_factor # Per draw
-      T_static = T_static_nominal*normal_force_factor  # 0
-      
-      P_static = N_static*np.cos(beta_draws) - T_static*np.sin(beta_draws)
-      Q_static = N_static*np.sin(beta_draws) + T_static*np.cos(beta_draws)
-      
-      
-      # NOTE:
-      # N_static, T_static, P_static, and Q_static
-      # are per draw for the entire band.
-      # P_dynamic, Q_dynamic N_dynamic, and T_dynamic
-      # will be __per_draw__
-      
-      # P_dynamic per draw
-      P_dynamic = (closure_state_sub_x - closure_state_add_x)* (xstep * np.pi*x/2.0)/(2.0*numdraws) # dynamic stress amplitude (extra factor of two converts peak-to-peak to amplitude)
-      
-      # For the moment, just make the shear correct near the surface
-      # because that's where we have data
-      #Q_dynamic = 0.0 # Should be shear vibration amplitude
-      # Per number of draws because we assume that the stress
-      # is distributed over the asperities.
-      #Q_dynamic = vib_shear_stress_ampl*xstep*np.pi*r/(2.0*numdraws)
-      Q_dynamic = ((tau_add[xcnt]+tau_sub[xcnt])*crack_model_shear_factor/2.0)*xstep*np.pi*x/(2.0*numdraws)
-      
-      N_dynamic = P_dynamic*np.cos(beta_draws)+Q_dynamic*np.sin(beta_draws)
-      T_dynamic = -P_dynamic*np.sin(beta_draws)+Q_dynamic*np.cos(beta_draws)
-    
-    
-      # exp( iBeta) = cos(beta)+i*sin(Beta)
-      # (Q+iP)*exp(iBeta) = Qcos(beta)-Psin(Beta) + i(Qsin(beta) + Pcos(beta))
-      # N =Im( (Q+iP)exp(iBeta) )
-      # T =Re( (Q+iP)exp(iBeta) )
-      # omega=(np.pi/2-beta_draws)-atan(friction_coefficient)
-      
-      # Locking condition: T < mu*N...  here T=T_dynamic, N=N_static-N-dynamic
-      ## i.e. Re( (Q+iP)*exp(iBeta)) < mu*Im( (Q+iP)*exp(iBeta))
-      ## i.e. Re( (Q+iP)*exp(iBeta))/Im( (Q+iP)*exp(iBeta)) < mu
-      ## i.e. cot(angle((Q+iP)*exp(iBeta))) < mu
-      ## i.e. acot(cot(angle((Q+iP)*exp(iBeta)))) > acot(mu)
-      ## OR acot(cot(angle((Q+iP)*exp(iBeta)))) > acot(mu)-pi
-      ## i.e. angle((Q+iP)*exp(iBeta)) > acot(mu) > 0
-      ##  OR 0 > angle((Q+iP)*exp(iBeta)) > acot(mu)-pi
-    
-      #ang=np.angle((Q + i*P)*np.exp(i*beta_draws))
-      #slip = (((ang > 0) & (ang  > np.arctan(1/friction_coefficient))) |
-      #        ((ang < 0) & (ang > np.arctan(1/friction_coefficient)-np.pi)))
-      # sdh 11/6/18 .... change N_static-abs(N_dynamic) to N_static + abs(N_dynamic)
-      # because slip occurs in easier case where compressive (negative) N_static
-      # is opposed by N_dynamic
-      # sdh 1/10/20 N_static is per draw, positive compression ... comparable to N_dynamic and or T_dynamic
-      slip=(np.abs(T_dynamic) >=  friction_coefficient[fc_idx]*(N_static)) & (N_static > 0.0)
-      for pcnt in range(numdraws):
-        print("xcnt=%f; abs(T_dynamic)=%f; N_static=%f; slip=%s" % (xcnt,abs(T_dynamic[pcnt]),N_static[pcnt],str(slip[pcnt])))
-        pass
-
-      utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor/2.0
+      # utt is a vibration amplitude... shear_displ_add[xcnt] + shear_displ_sub[xcnt] gives the peak-to-peak value for __each_side__ of the crack. Ampltiude is half that... but also double because relative motion of flanks is twice the motion of each flank... so net no change,
+      utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor
       PP_vibration_y=uyy_add-uyy_sub
       vibration_ampl[fc_idx,xcnt]=PP_vibration_y/2.0
       #PP_vibration_t=utt*2.0
       tangential_vibration_ampl=np.abs(vibration_ampl[fc_idx,xcnt] * np.sin(beta_draws) + utt*np.cos(beta_draws))*slip
       tangential_vibration_velocity_ampl = 2*np.pi*vibration_frequency*tangential_vibration_ampl
-    
+      
       # Power = (1/2)Fampl*vampl
       # where Fampl = mu*Normal force
       # Q: Are force and velocity always in-phase (probably not)
@@ -341,7 +255,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # (Note: N_static term was missing from original calculation)
       # sdh 1/10/20 N_static is per draw... comparable to N_dynamic and or T_dynamic
       if x >= closure_point_sub:
-        Power = 0.5 * (friction_coefficient[fc_idx]*(np.abs(N_static)))*tangential_vibration_velocity_ampl
+        Power = 0.5 * (friction_coefficient[fc_idx]*(N_sub+N_add)/2.0)*tangential_vibration_velocity_ampl
         pass
       else:
         Power=0.0
