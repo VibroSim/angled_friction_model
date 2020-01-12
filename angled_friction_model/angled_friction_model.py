@@ -144,7 +144,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       #closure_state_x = splev(x,stress_field_spl,ext=1) 
       #closure_state_x = closure_stress[xcnt]
       #print("closure_stress[%d]=%f; contact_stress_static[%d]=%f" % (xcnt,closure_stress[xcnt],xcnt,contact_stress_static[xcnt]))
-      closure_state_x = contact_stress_static[xcnt]
+      closure_state_x = contact_stress_static[xcnt]  # positive compression
       
       
       
@@ -153,14 +153,14 @@ def angled_friction_model(x_bnd,xrange,xstep,
         closure_state_sub_x=0.0
         pass
       else:
-        closure_state_sub_x = sigma_sub[xcnt]
+        closure_state_sub_x = sigma_sub[xcnt] # positive tensile
         pass
       
       if x <= closure_point_add:
         closure_state_add_x=0.0
         pass
       else:
-        closure_state_add_x = sigma_add[xcnt]
+        closure_state_add_x = sigma_add[xcnt] # positive tensile
         pass
       
       if verbose:
@@ -311,8 +311,11 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # sdh 11/6/18 .... change N_static-abs(N_dynamic) to N_static + abs(N_dynamic)
       # because slip occurs in easier case where compressive (negative) N_static
       # is opposed by N_dynamic
-      # sdh 1/10/20 N_static is per draw ... comparable to N_dynamic and or T_dynamic
-      slip=np.abs(T_dynamic) >=  -friction_coefficient[fc_idx]*(N_static+np.abs(N_dynamic))
+      # sdh 1/10/20 N_static is per draw, positive compression ... comparable to N_dynamic and or T_dynamic
+      slip=(np.abs(T_dynamic) >=  friction_coefficient[fc_idx]*(N_static)) & (N_static > 0.0)
+      for pcnt in range(numdraws):
+        print("xcnt=%f; abs(T_dynamic)=%f; N_static=%f; slip=%s" % (xcnt,abs(T_dynamic[pcnt]),N_static[pcnt],str(slip[pcnt])))
+        pass
 
       utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor/2.0
       PP_vibration_y=uyy_add-uyy_sub
@@ -338,7 +341,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # (Note: N_static term was missing from original calculation)
       # sdh 1/10/20 N_static is per draw... comparable to N_dynamic and or T_dynamic
       if x >= closure_point_sub:
-        Power = 0.5 * (friction_coefficient[fc_idx]*(np.abs(N_static)+np.abs(N_dynamic)))*tangential_vibration_velocity_ampl
+        Power = 0.5 * (friction_coefficient[fc_idx]*(np.abs(N_static)))*tangential_vibration_velocity_ampl
         pass
       else:
         Power=0.0
