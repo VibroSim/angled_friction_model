@@ -160,7 +160,8 @@ def scriptify(callable):
     # the __main__ globals. But we check first whether there is 
     # a processtrak step. Do this by inspecting the stack:
     context = None
-    try: 
+    try:
+        stackframe=None
         stacktrace = inspect.stack()
         for stackcnt in range(1,len(stacktrace)):
             stackframe=stacktrace[stackcnt][0]
