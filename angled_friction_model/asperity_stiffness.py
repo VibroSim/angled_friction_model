@@ -29,19 +29,31 @@ import scipy.integrate
 
 f_theta = lambda theta,angular_center,angular_stddev: (1.0/(np.sqrt(2.0*np.pi*angular_stddev**2.0)))*np.exp(-(theta-angular_center)**2.0/(2.0*angular_stddev**2.0))
 
-integrand = lambda theta,Estar,G,angular_center,angular_stddev: ( (9.0/(16.0*np.cos(theta)*Estar**2.0))**(1.0/3.0)*np.cos(theta)**2.0 + (9.0/(16.0*np.cos(theta)*G**2.0))**(1.0/3.0)*np.sin(theta)**2.0)**(-3.0/2.0) *f_theta(theta,angular_center,angular_stddev)
+integrand_old = lambda theta,Estar,G,angular_center,angular_stddev: ( (9.0/(16.0*np.cos(theta)*Estar**2.0))**(1.0/3.0)*np.cos(theta)**2.0 + (9.0/(16.0*np.cos(theta)*G**2.0))**(1.0/3.0)*np.sin(theta)**2.0)**(-3.0/2.0) *f_theta(theta,angular_center,angular_stddev)
+
+integrand = lambda theta,angular_center,angular_stddev: f_theta(theta,angular_center,angular_stddev)*(np.sqrt(8)/(3.0*np.cos(theta)*((np.cos(theta) + np.tan(theta)*np.sin(theta))**(3.0/2.0))))
+
+
 
 Estar = lambda E,nu: 1.0/(2.0*(1.0-nu**2.0)/E)
 
 
-def asperity_stiffness(msqrtR,E,nu,angular_stddev):
+def asperity_stiffness_old(msqrtR,E,nu,angular_stddev):
     angular_center=0.0
     G=E/(2.0*(1.0+nu))
 
-    Hm=msqrtR * 2.0*scipy.integrate.quad(lambda theta: integrand(theta,Estar(E,nu),G,angular_center,angular_stddev),0,np.pi/2.1)[0] # We don't integrate quite up to pi/2 because of convergence issues with zero denominator... Leading factor of 2 because we are integrating from 0..pi/2.1 not -pi/2.1...pi/2.1
+    Hm=msqrtR * 2.0*scipy.integrate.quad(lambda theta: integrand_old(theta,Estar(E,nu),G,angular_center,angular_stddev),0,np.pi/2.1)[0] # We don't integrate quite up to pi/2 because of convergence issues with zero denominator... Leading factor of 2 because we are integrating from 0..pi/2.1 not -pi/2.1...pi/2.1
 
     return Hm
-    
+
+# REPLACEMENT: Based on new logic described in soft_closure paper
+def asperity_stiffness(msqrtR,E,nu,angular_stddev):
+    angular_center=0.0
+    # What was Hm is now known as Lm
+    Lm=msqrtR * Estar(E,nu) * scipy.integrate.quad(lambda theta: integrand(theta,angular_center,angular_stddev),-np.pi/2.0,np.pi/2.0)[0] 
+    return Lm
+
+
 
 if __name__=="__main__":
     # Reasonable numbers....
@@ -51,7 +63,7 @@ if __name__=="__main__":
     nu=0.33
     angular_stddev=30.0*np.pi/180.0    
 
-    Hm = asperity_stiffness(m*np.sqrt(R),E,nu,angular_stddev)
+    Lm = asperity_stiffness(m*np.sqrt(R),E,nu,angular_stddev)
     
-    print("Hm =",Hm,"Pa/m^(3/2)") 
+    print("Lm =",Lm,"Pa/m^(3/2)") 
     pass
