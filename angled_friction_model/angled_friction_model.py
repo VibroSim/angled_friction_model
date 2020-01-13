@@ -224,11 +224,21 @@ def angled_friction_model(x_bnd,xrange,xstep,
       
       # P and Q are FORCES... treat them as acting on quarter-annulus
     
-      slip_sub=(np.abs(T_sub) >=  friction_coefficient[fc_idx]*(N_sub)) & (N_sub > 0.0)
-      slip_add=(np.abs(T_add) >=  friction_coefficient[fc_idx]*(N_add)) & (N_add > 0.0)
+      #slip_sub=(np.abs(T_sub) >=  friction_coefficient[fc_idx]*(N_sub)) & (N_sub > 0.0)
+      #slip_add=(np.abs(T_add) >=  friction_coefficient[fc_idx]*(N_add)) & (N_add > 0.0)
       net_normal = (N_sub+N_add)/2.0 > 0.0 # Is there a net compressive normal stress?
+      slip_noresidualshear = (np.abs(T_sub-T_add) >= friction_coefficient[fc_idx]*(N_sub+N_add)/2.0) & net_normal 
+
+      slip_residualshear = (np.abs((T_sub+T_add)/2.0) >= friction_coefficient[fc_idx]*(N_sub+N_add)/2.0) & net_normal 
+
+      #residualshear_override_fraction = 0.1
       
-      slip = (slip_sub & slip_add) & net_normal  # Consider any asperity that can slip anywhere in the cycle as full slippage, so long as there is overall normal compression
+      #residualshear_override = np.random.rand(numdraws) < residualshear_override_fraction
+
+      slip = slip_noresidualshear # | (slip_residualshear & residualshear_override)
+      
+      
+      #slip = (slip_sub & slip_add) & net_normal  # Consider any asperity that can slip anywhere in the cycle as full slippage, so long as there is overall normal compression
 
       # utt is a vibration amplitude... shear_displ_add[xcnt] + shear_displ_sub[xcnt] gives the peak-to-peak value for __each_side__ of the crack. Ampltiude is half that... but also double because relative motion of flanks is twice the motion of each flank... so net no change,
       utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor
@@ -255,7 +265,8 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # (Note: N_static term was missing from original calculation)
       # sdh 1/10/20 N_static is per draw... comparable to N_dynamic and or T_dynamic
       if x >= closure_point_sub:
-        Power = 0.5 * (friction_coefficient[fc_idx]*(N_sub+N_add)/2.0)*tangential_vibration_velocity_ampl
+        Power = 0.5 * (friction_coefficient[fc_idx]*np.abs(N_sub+N_add)/2.0)*tangential_vibration_velocity_ampl
+        #Power = 0.5 * (np.abs(T_sub-T_add))*tangential_vibration_velocity_ampl
         pass
       else:
         Power=0.0
