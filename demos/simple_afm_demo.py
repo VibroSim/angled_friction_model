@@ -15,7 +15,13 @@ from crackclosuresim2 import Tada_ModeI_CircularCrack_along_midline
 from crackclosuresim2 import ModeII_throughcrack_CSDformula
 from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midline
 
+from function_as_script import scriptify
+
 from angled_friction_model.angled_friction_model import angled_friction_model
+#from angled_friction_model.angled_friction_model import angled_friction_model as angled_friction_model_function
+#angled_friction_model = scriptify(angled_friction_model_function)
+
+
 from angled_friction_model.angled_friction_model import integrate_power
 
 
