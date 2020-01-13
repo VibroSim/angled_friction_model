@@ -150,7 +150,8 @@ pl.title('Crack closure state')
 # Now calculate crack heating under the given conditions
 (power_per_m2_left,
  power_per_m2_stddev_left,
- vibration_ampl_left) = angled_friction_model(x_bnd,xrange,xstep,
+ vibration_ampl_left,
+ shear_vibration_ampl_left) = angled_friction_model(x_bnd,xrange,xstep,
                                               numdraws,
                                               E,nu,
                                               sigma_yield,tau_yield,
@@ -172,7 +173,8 @@ pl.title('Crack closure state')
 
 (power_per_m2_right,
  power_per_m2_stddev_right,
- vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
+ vibration_ampl_right,
+ shear_vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
                                                numdraws,
                                                E,nu,
                                                sigma_yield,tau_yield,

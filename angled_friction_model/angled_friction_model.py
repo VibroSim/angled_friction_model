@@ -37,6 +37,25 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           crack_model_shear_factor, # ADJUSTABLE shear sensitivity factor (nominally 1.0)
                           msqrtR, # ADJUSTABLE asperity density * sqrt(asperity radius)
                           verbose,doplots):
+  """Calculate heating power per unit area
+  for a half of a half-penny shaped 
+  surface crack or all of a quarter-penny shaped edge crack. 
+  Heating is calculated over the free surface and assumed to be
+  applicable to the underlying quarter-annulus. 
+
+  Returns (heating_power_per_m2,
+           heating_power_per_m2_std_deviation,
+           normal_vibration_amplitude, and
+           shear_vibration_amplitude) 
+  all functions of position defined over the given xrange.
+
+  crack_model_normal and crack_model_shear should be applicable
+  to a quarter-circular crack -- usually 
+  Tada_ModeI_CircularCrack_along_midline(E,nu) and
+  Fabrikant_ModeII_CircularCrack_along_midline(E,nu)
+  as provided by the crackclosuresim2 package. 
+
+"""
 
 
   beta_drawfunc = lambda x: np.random.randn()*angular_stddev + 0.0
@@ -107,6 +126,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
   power_per_m2 = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
   power_per_m2_stddev = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
   vibration_ampl = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
+  shear_vibration_ampl = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
 
   
   for fc_idx in range(len(friction_coefficient)):
@@ -240,11 +260,11 @@ def angled_friction_model(x_bnd,xrange,xstep,
       #slip = (slip_sub & slip_add) & net_normal  # Consider any asperity that can slip anywhere in the cycle as full slippage, so long as there is overall normal compression
 
       # utt is a vibration amplitude... shear_displ_add[xcnt] + shear_displ_sub[xcnt] gives the peak-to-peak value for __each_side__ of the crack. Ampltiude is half that... but also double because relative motion of flanks is twice the motion of each flank... so net no change,
-      utt = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor
+      shear_vibration_ampl[fc_idx,xcnt] = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor
       PP_vibration_y=uyy_add-uyy_sub
       vibration_ampl[fc_idx,xcnt]=PP_vibration_y/2.0
-      #PP_vibration_t=utt*2.0
-      tangential_vibration_ampl=np.abs(vibration_ampl[fc_idx,xcnt] * np.sin(beta_draws) + utt*np.cos(beta_draws))*slip
+      #PP_vibration_t=shear_vibration_ampl[fc_idx,xcnt]*2.0
+      tangential_vibration_ampl=np.abs(vibration_ampl[fc_idx,xcnt] * np.sin(beta_draws) + shear_vibration_ampl[fc_idx,xcnt]*np.cos(beta_draws))*slip
       tangential_vibration_velocity_ampl = 2*np.pi*vibration_frequency*tangential_vibration_ampl
       
       # Power = (1/2)Fampl*vampl
@@ -310,7 +330,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
     #pl.show()
     pass
 
-  return (power_per_m2,power_per_m2_stddev,vibration_ampl)
+  return (power_per_m2,power_per_m2_stddev,vibration_ampl,shear_vibration_ampl)
 
 
 

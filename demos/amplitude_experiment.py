@@ -132,7 +132,8 @@ for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitud
     
     (power_per_m2_right,
      power_per_m2_stddev_right,
-     vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
+     vibration_ampl_right,
+     shear_vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
                                                    numdraws,
                                                    E,nu,
                                                    sigma_yield,tau_yield,
