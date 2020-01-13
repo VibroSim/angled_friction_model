@@ -36,10 +36,19 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           crack_model_shear,  
                           crack_model_shear_factor, # ADJUSTABLE shear sensitivity factor (nominally 1.0)
                           msqrtR, # ADJUSTABLE asperity density * sqrt(asperity radius)
+                          crack_type,
+                          thickness,
                           verbose,doplots):
   """Calculate heating power per unit area
   for a half of a half-penny shaped 
-  surface crack or all of a quarter-penny shaped edge crack. 
+  surface crack, all of a quarter-penny shaped edge crack, 
+  half of a through (tunnel) crack, or all of an edge crack
+  in a thin material. 
+
+  Set crack_type to "halfthrough" or "quarterpenny" as appropriate
+  if crack_type is set to halfthrough then thickness must be 
+  provided (otherwise it is ignored)
+
   Heating is calculated over the free surface and assumed to be
   applicable to the underlying quarter-annulus. 
 
@@ -50,10 +59,14 @@ def angled_friction_model(x_bnd,xrange,xstep,
   all functions of position defined over the given xrange.
 
   crack_model_normal and crack_model_shear should be applicable
-  to a quarter-circular crack -- usually 
+  to the specified crack_type -- usually 
   Tada_ModeI_CircularCrack_along_midline(E,nu) and
   Fabrikant_ModeII_CircularCrack_along_midline(E,nu)
-  as provided by the crackclosuresim2 package. 
+  for the quarter-circular crack or 
+  ModeI_throughcrack_CODformula(E) and 
+  ModeII_throughcrack_CSDformula(E,nu) for the half through
+  crack, as provided by the crackclosuresim2 package. 
+
 
 """
 
@@ -139,6 +152,16 @@ def angled_friction_model(x_bnd,xrange,xstep,
       
       xleft=x_bnd[xcnt]
       xright=x_bnd[xcnt+1]
+
+      if crack_type=="halfthrough":
+        zone_length = thickness
+        pass
+      elif crack_type=="quarterpenny":
+        zone_length = np.pi*x/2.0 # quarter-circumference at this radius
+        pass
+      else:
+        raise ValueError("Invalid zone_length %s (try \"halfthrough\" or \"quarterpenny\").")
+      
       
       ## determine normalization factor for pdf at this x position
       #beta_unnorm_int=quad(lambda beta: beta_unnorm_pdf(beta,x),-np.pi,np.pi)[0]
@@ -224,11 +247,11 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # distance (but we don't anymore) 
 
 
-      P_sub = -sigma_sub[xcnt] * xstep * np.pi*x/2.0 # Overall force, normal to crack plane, positive compression on a quarter annulus, in the 'sub' state
-      Q_sub = (-(tau_add[xcnt]+tau_sub[xcnt])/2.0)*crack_model_shear_factor*xstep*np.pi*x/2.0 # Overall force, parallel to crack plane, positive compression on a quarter annulus, in the 'sub' state
+      P_sub = -sigma_sub[xcnt] * xstep * zone_length # Overall force, normal to crack plane, positive compression on a quarter annulus or thickness, in the 'sub' state
+      Q_sub = (-(tau_add[xcnt]+tau_sub[xcnt])/2.0)*crack_model_shear_factor*xstep*zone_length # Overall force, parallel to crack plane, positive compression on a quarter annulus or thickness, in the 'sub' state
 
-      P_add = -sigma_add[xcnt] * xstep * np.pi*x/2.0 # Overall force, normal to crack plane, positive compression on a quarter annulus, in the 'add' state
-      Q_add = ((tau_add[xcnt]+tau_sub[xcnt])/2.0)*crack_model_shear_factor*xstep*np.pi*x/2.0 # Overall force, parallel to crack plane, positive compression on a quarter annulus, in the 'add' state
+      P_add = -sigma_add[xcnt] * xstep * zone_length # Overall force, normal to crack plane, positive compression on a quarter annulus, in the 'add' state
+      Q_add = ((tau_add[xcnt]+tau_sub[xcnt])/2.0)*crack_model_shear_factor*xstep*zone_length # Overall force, parallel to crack plane, positive compression on a quarter annulus, in the 'add' state
 
 
       # N_add, T_add, N_sub, T_sub are arrays that are __per_draw__
@@ -295,8 +318,8 @@ def angled_friction_model(x_bnd,xrange,xstep,
       # Calculate square root of variance, with Bessel's correction
       TotPowerStdDev = np.sqrt(np.sum((Power*numdraws - TotPower)**2.0)/(numdraws-1))
       
-      power_per_m2[fc_idx,xcnt] = TotPower/(xstep*np.pi*x/2.0)
-      power_per_m2_stddev[fc_idx,xcnt] = TotPowerStdDev/(xstep*np.pi*x/2.0)
+      power_per_m2[fc_idx,xcnt] = TotPower/(xstep*zone_length)
+      power_per_m2_stddev[fc_idx,xcnt] = TotPowerStdDev/(xstep*zone_length)
     
       pass
 
