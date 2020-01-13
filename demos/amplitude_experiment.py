@@ -15,7 +15,7 @@ from crackclosuresim2 import ModeII_throughcrack_CSDformula
 from crackclosuresim2.fabrikant import Fabrikant_ModeII_CircularCrack_along_midline
 
 
-#from function_as_script import scriptify
+from function_as_script import scriptify
 
 from angled_friction_model.angled_friction_model import angled_friction_model
 #from angled_friction_model.angled_friction_model import angled_friction_model as angled_friction_model_function
@@ -87,7 +87,8 @@ xrange = (x_bnd[1:] + x_bnd[:-1])/2.0 # Position of element centers
 reff_rightside=np.array([ .5e-3, .7e-3, .9e-3, 1.05e-3, 1.2e-3, 1.33e-3, 1.45e-3, 1.56e-3, 1.66e-3],dtype='d')
 
 # Corresponding opening stresses, units of Pa
-seff_rightside=np.array([ -150e6, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
+#seff_rightside=np.array([ -150e6, 50e6, 100e6, 150e6, 200e6, 250e6, 300e6, 350e6, 400e6],dtype='d')
+seff_rightside=np.array([ -50e6, 20e6, 40e6, 60e6, 70e6, 80e6, 90e6, 115e6, 130e6],dtype='d')
 
 # half-crack lengths for the left-hand side (meters)
 reff_leftside=np.array([ .5e-3, .7e-3, .9e-3, 1.05e-3, 1.2e-3, 1.33e-3, 1.45e-3, 1.56e-3, 1.66e-3],dtype='d')
@@ -150,16 +151,32 @@ for ampl_idx in range(vib_ampls.shape[0]):  # vibrational normal stress amplitud
                                                    msqrtR,
                                                    verbose,
                                                    doplots)
-    
+
+
+    #if ampl_idx==1:
+    #    raise ValueError("break!")
     total_heating_right[ampl_idx] = np.sum(power_per_m2_right*xrange*xstep*np.pi/2)  # integrate heating of half-semicircles (integrate power *rdrdtheta)
     pass
 
+# linear + quadratic curve fit
+# [ vib_ampls vib_ampls^2 ][ c1 ]  = [ total_heating_right ]
+#                          [ c2 ]
+Amat = np.array((vib_ampls,vib_ampls**2.0)).T
+(linear_coeff, quadratic_coeff) = np.inner(np.dot(np.linalg.inv(np.dot(Amat.T,Amat)),Amat.T),total_heating_right)
+
+# power law fit
+init_idx = vib_ampls.shape[0]//2
+(powerlaw_coeffs,cov_x) = scipy.optimize.leastsq(lambda p: total_heating_right-p[0]*vib_ampls**p[1],(total_heating_right[init_idx]/vib_ampls[init_idx]**1.5,1.5))
+
 pl.figure()
 pl.clf()
-pl.plot(vib_ampls/1e6,total_heating_right*1e3,'-')
+pl.plot(vib_ampls/1e6,total_heating_right*1e3,'-',
+        vib_ampls/1e6,(vib_ampls*linear_coeff + (vib_ampls**2.0)*quadratic_coeff)*1e3,'-',
+        vib_ampls/1e6,(powerlaw_coeffs[0]*vib_ampls**powerlaw_coeffs[1])*1e3,'-')
 pl.grid()
 pl.xlabel('Vibration amplitude (MPa)')
 pl.ylabel('Heating power (mW)')
+pl.legend(('Calculated power','Linear+quadratic fit','Power law power=%f' % (powerlaw_coeffs[1])),loc="best")
 pl.title('static load = %f MPa' % (static_load/1e6))
 # Save png image of figure in system temporary directory
 pl.savefig(os.path.join(tempfile.gettempdir(),'amplitude_experiment_%fMPa.png' % (static_load/1e6)),dpi=300)

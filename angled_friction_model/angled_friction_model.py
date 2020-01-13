@@ -236,8 +236,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       #residualshear_override = np.random.rand(numdraws) < residualshear_override_fraction
 
       slip = slip_noresidualshear # | (slip_residualshear & residualshear_override)
-      
-      
+           
       #slip = (slip_sub & slip_add) & net_normal  # Consider any asperity that can slip anywhere in the cycle as full slippage, so long as there is overall normal compression
 
       # utt is a vibration amplitude... shear_displ_add[xcnt] + shear_displ_sub[xcnt] gives the peak-to-peak value for __each_side__ of the crack. Ampltiude is half that... but also double because relative motion of flanks is twice the motion of each flank... so net no change,
