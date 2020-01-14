@@ -198,8 +198,8 @@ pl.title('Crack closure state')
                                                      verbose,
                                                      doplots)
 
-(totalpower_left, totalpower_stddev_left) = integrate_power(xrange,power_per_m2_left,power_per_m2_stddev_left)
-(totalpower_right, totalpower_stddev_right) = integrate_power(xrange,power_per_m2_right,power_per_m2_stddev_right)
+(totalpower_left, totalpower_stddev_left) = integrate_power(xrange,"quarterpenny",None,power_per_m2_left,power_per_m2_stddev_left)
+(totalpower_right, totalpower_stddev_right) = integrate_power(xrange,"quarterpenny",None,power_per_m2_right,power_per_m2_stddev_right)
 
 totalpower=totalpower_left + totalpower_right
 

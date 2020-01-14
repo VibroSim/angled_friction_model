@@ -160,7 +160,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
         zone_length = np.pi*x/2.0 # quarter-circumference at this radius
         pass
       else:
-        raise ValueError("Invalid zone_length %s (try \"halfthrough\" or \"quarterpenny\").")
+        raise ValueError("Invalid crack_type %s (try \"halfthrough\" or \"quarterpenny\").")
       
       
       ## determine normalization factor for pdf at this x position
@@ -357,17 +357,26 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
 
 
-def integrate_power(xrange,power_per_m2,power_per_m2_stddev=None):
-  # integrate power over half of a penny shaped crack... applies
+def integrate_power(xrange,crack_type,thickness,power_per_m2,power_per_m2_stddev=None):
+  # integrate power over half of a half-penny shaped crack or through
+  # crack ... applies
   # over last axis
   dx=abs(xrange[1]-xrange[0])
-  slice_area = dx * np.pi*abs(xrange)/2.0 
+
+  if crack_type=="quarterpenny":
+    slice_area = dx * np.pi*abs(xrange)/2.0
+    pass
+  elif crack_type=="halfthrough":
+    slice_area = dx * thickness
+    pass
+  else:
+    raise ValueError("Invalid crack_type %s (try \"halfthrough\" or \"quarterpenny\").")
+    
   totalpower = np.sum(power_per_m2*slice_area,axis=len(power_per_m2.shape)-1)
 
   if power_per_m2_stddev is not None:
     totalpower_stddev = np.sqrt(np.sum(power_per_m2_stddev**2.0 * slice_area**2.0,axis=len(power_per_m2.shape)-1))
     return (totalpower,totalpower_stddev)
-    pass
   else:
     return totalpower
   pass
