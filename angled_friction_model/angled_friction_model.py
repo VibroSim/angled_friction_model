@@ -160,7 +160,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
         zone_length = np.pi*x/2.0 # quarter-circumference at this radius
         pass
       else:
-        raise ValueError("Invalid crack_type %s (try \"halfthrough\" or \"quarterpenny\").")
+        raise ValueError("Invalid crack_type %s (try \"halfthrough\" or \"quarterpenny\")." % (crack_type))
       
       
       ## determine normalization factor for pdf at this x position
@@ -370,7 +370,7 @@ def integrate_power(xrange,crack_type,thickness,power_per_m2,power_per_m2_stddev
     slice_area = dx * thickness
     pass
   else:
-    raise ValueError("Invalid crack_type %s (try \"halfthrough\" or \"quarterpenny\").")
+    raise ValueError("Invalid crack_type %s (try \"halfthrough\" or \"quarterpenny\")." % (crack_type))
     
   totalpower = np.sum(power_per_m2*slice_area,axis=len(power_per_m2.shape)-1)
 

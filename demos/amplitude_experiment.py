@@ -174,12 +174,14 @@ init_idx = vib_ampls.shape[0]//2
 pl.figure()
 pl.clf()
 pl.plot(vib_ampls/1e6,total_heating_right*1e3,'-',
-        vib_ampls/1e6,(vib_ampls*linear_coeff + (vib_ampls**2.0)*quadratic_coeff)*1e3,'-',
+        #vib_ampls/1e6,(vib_ampls*linear_coeff + (vib_ampls**2.0)*quadratic_coeff)*1e3,'-',
         vib_ampls/1e6,(powerlaw_coeffs[0]*vib_ampls**powerlaw_coeffs[1])*1e3,'-')
 pl.grid()
 pl.xlabel('Vibration amplitude (MPa)')
 pl.ylabel('Heating power (mW)')
-pl.legend(('Calculated power','Linear+quadratic fit','Power law power=%f' % (powerlaw_coeffs[1])),loc="best")
+pl.legend(('Calculated power',
+           #'Linear+quadratic fit',
+           'Power law power=%f' % (powerlaw_coeffs[1])),loc="best")
 pl.title('static load = %f MPa' % (static_load/1e6))
 # Save png image of figure in system temporary directory
 pl.savefig(os.path.join(tempfile.gettempdir(),'amplitude_experiment_%fMPa.png' % (static_load/1e6)),dpi=300)
