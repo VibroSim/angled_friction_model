@@ -148,7 +148,7 @@ pl.title('Crack closure state')
 
 # Now calculate crack heating under the given conditions (normal stress excitation)
 (normal_power_per_m2_left,
- normal_power_per_m2_stddev_left,
+ normal_power_per_m2_mean_stddev_left,
  normal_vibration_ampl_left,
  normal_shear_vibration_ampl_left) = angled_friction_model(x_bnd,xrange,xstep,
                                                            numdraws,
@@ -173,7 +173,7 @@ pl.title('Crack closure state')
                                                            doplots)
 
 (normal_power_per_m2_right,
- normal_power_per_m2_stddev_right,
+ normal_power_per_m2_mean_stddev_right,
  normal_vibration_ampl_right,
  normal_shear_vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
                                                             numdraws,
@@ -197,8 +197,8 @@ pl.title('Crack closure state')
                                                             verbose,
                                                             doplots)
 
-(normal_totalpower_left, normal_totalpower_stddev_left) = integrate_power(xrange,"quarterpenny",None,normal_power_per_m2_left,normal_power_per_m2_stddev_left)
-(normal_totalpower_right, normal_totalpower_stddev_right) = integrate_power(xrange,"quarterpenny",None,normal_power_per_m2_right,normal_power_per_m2_stddev_right)
+(normal_totalpower_left, normal_totalpower_stddev_left) = integrate_power(xrange,"quarterpenny",None,normal_power_per_m2_left,normal_power_per_m2_mean_stddev_left)
+(normal_totalpower_right, normal_totalpower_stddev_right) = integrate_power(xrange,"quarterpenny",None,normal_power_per_m2_right,normal_power_per_m2_mean_stddev_right)
 
 normal_totalpower=normal_totalpower_left + normal_totalpower_right
 
@@ -206,7 +206,7 @@ normal_totalpower=normal_totalpower_left + normal_totalpower_right
 
 # Now calculate crack heating under the given conditions (normal stress excitation)
 (shear_power_per_m2_left,
- shear_power_per_m2_stddev_left,
+ shear_power_per_m2_mean_stddev_left,
  shear_vibration_ampl_left,
  shear_shear_vibration_ampl_left) = angled_friction_model(x_bnd,xrange,xstep,
                                                           numdraws,
@@ -231,7 +231,7 @@ normal_totalpower=normal_totalpower_left + normal_totalpower_right
                                                           doplots)
 
 (shear_power_per_m2_right,
- shear_power_per_m2_stddev_right,
+ shear_power_per_m2_mean_stddev_right,
  shear_vibration_ampl_right,
  shear_shear_vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
                                                            numdraws,
@@ -255,8 +255,8 @@ normal_totalpower=normal_totalpower_left + normal_totalpower_right
                                                            verbose,
                                                            doplots)
 
-(shear_totalpower_left, shear_totalpower_stddev_left) = integrate_power(xrange,"quarterpenny",None,shear_power_per_m2_left,shear_power_per_m2_stddev_left)
-(shear_totalpower_right, shear_totalpower_stddev_right) = integrate_power(xrange,"quarterpenny",None,shear_power_per_m2_right,shear_power_per_m2_stddev_right)
+(shear_totalpower_left, shear_totalpower_stddev_left) = integrate_power(xrange,"quarterpenny",None,shear_power_per_m2_left,shear_power_per_m2_mean_stddev_left)
+(shear_totalpower_right, shear_totalpower_stddev_right) = integrate_power(xrange,"quarterpenny",None,shear_power_per_m2_right,shear_power_per_m2_mean_stddev_right)
 
 shear_totalpower=shear_totalpower_left + shear_totalpower_right
 

@@ -26,6 +26,7 @@ def angled_friction_model_single_xpos(x_bnd,xrange,xstep,xidx,numdraws,
                                       beta_drawfunc,
                                       sigma_add,sigma_sub,
                                       tensile_displ_add,tensile_displ_sub,
+                                      closure_point_add,closure_point_sub,
                                       tau_add,tau_sub,
                                       shear_displ_add,shear_displ_sub,
                                       vibration_frequency,
@@ -36,14 +37,14 @@ def angled_friction_model_single_xpos(x_bnd,xrange,xstep,xidx,numdraws,
                                       verbose):
 
 
-  x=xrange[xcnt]
+  x=xrange[xidx]
       
   if verbose: 
     print("x=%f um" % (x*1e6))
     pass
       
-  xleft=x_bnd[xcnt]
-  xright=x_bnd[xcnt+1]
+  xleft=x_bnd[xidx]
+  xright=x_bnd[xidx+1]
 
   if crack_type=="halfthrough":
     zone_length = thickness
@@ -71,9 +72,9 @@ def angled_friction_model_single_xpos(x_bnd,xrange,xstep,xidx,numdraws,
       
       
   #closure_state_x = splev(x,stress_field_spl,ext=1) 
-  #closure_state_x = closure_stress[xcnt]
-  #print("closure_stress[%d]=%f; contact_stress_static[%d]=%f" % (xcnt,closure_stress[xcnt],xcnt,contact_stress_static[xcnt]))
-  #closure_state_x = contact_stress_static[xcnt]  # positive compression
+  #closure_state_x = closure_stress[xidx]
+  #print("closure_stress[%d]=%f; contact_stress_static[%d]=%f" % (xidx,closure_stress[xidx],xidx,contact_stress_static[xidx]))
+  #closure_state_x = contact_stress_static[xidx]  # positive compression
       
   
       
@@ -82,25 +83,25 @@ def angled_friction_model_single_xpos(x_bnd,xrange,xstep,xidx,numdraws,
     closure_state_sub_x=0.0
     pass
   else:
-    closure_state_sub_x = sigma_sub[xcnt] # positive tensile
+    closure_state_sub_x = sigma_sub[xidx] # positive tensile
     pass
       
   if x <= closure_point_add:
     closure_state_add_x=0.0
     pass
   else:
-    closure_state_add_x = sigma_add[xcnt] # positive tensile
+    closure_state_add_x = sigma_add[xidx] # positive tensile
     pass
       
   if verbose:
-    print("sigma_sub[%d]=%f; sigma_add[%d]=%f" % (xcnt,sigma_sub[xcnt],xcnt,sigma_add[xcnt]))
+    print("sigma_sub[%d]=%f; sigma_add[%d]=%f" % (xidx,sigma_sub[xidx],xidx,sigma_add[xidx]))
     pass
       
   # uyy is directly calculated value because soft closure model
   # already doubles displacement from the fracture mechanics formula
-  uyy_add = tensile_displ_add[xcnt]*1.0
+  uyy_add = tensile_displ_add[xidx]*1.0
       
-  uyy_sub = tensile_displ_sub[xcnt]*1.0
+  uyy_sub = tensile_displ_sub[xidx]*1.0
       
   # sigma_sub and sigma_add are positive tensile representations of the
   # normal tractions on the crack surfaces.
@@ -133,11 +134,11 @@ def angled_friction_model_single_xpos(x_bnd,xrange,xstep,xidx,numdraws,
   # distance (but we don't anymore) 
 
 
-  P_sub = -sigma_sub[xcnt] * xstep * zone_length # Overall force, normal to crack plane, positive compression on a quarter annulus or thickness, in the 'sub' state
-  Q_sub = (-(tau_add[xcnt]+tau_sub[xcnt])/2.0)*crack_model_shear_factor*xstep*zone_length # Overall force, parallel to crack plane, positive compression on a quarter annulus or thickness, in the 'sub' state
+  P_sub = -sigma_sub[xidx] * xstep * zone_length # Overall force, normal to crack plane, positive compression on a quarter annulus or thickness, in the 'sub' state
+  Q_sub = (-(tau_add[xidx]+tau_sub[xidx])/2.0)*crack_model_shear_factor*xstep*zone_length # Overall force, parallel to crack plane, positive compression on a quarter annulus or thickness, in the 'sub' state
 
-  P_add = -sigma_add[xcnt] * xstep * zone_length # Overall force, normal to crack plane, positive compression on a quarter annulus, in the 'add' state
-  Q_add = ((tau_add[xcnt]+tau_sub[xcnt])/2.0)*crack_model_shear_factor*xstep*zone_length # Overall force, parallel to crack plane, positive compression on a quarter annulus, in the 'add' state
+  P_add = -sigma_add[xidx] * xstep * zone_length # Overall force, normal to crack plane, positive compression on a quarter annulus, in the 'add' state
+  Q_add = ((tau_add[xidx]+tau_sub[xidx])/2.0)*crack_model_shear_factor*xstep*zone_length # Overall force, parallel to crack plane, positive compression on a quarter annulus, in the 'add' state
 
 
   # N_add, T_add, N_sub, T_sub are arrays that are __per_draw__
@@ -168,12 +169,12 @@ def angled_friction_model_single_xpos(x_bnd,xrange,xstep,xidx,numdraws,
            
   #slip = (slip_sub & slip_add) & net_normal  # Consider any asperity that can slip anywhere in the cycle as full slippage, so long as there is overall normal compression
 
-  # utt is a vibration amplitude... shear_displ_add[xcnt] + shear_displ_sub[xcnt] gives the peak-to-peak value for __each_side__ of the crack. Ampltiude is half that... but also double because relative motion of flanks is twice the motion of each flank... so net no change,
-  shear_vibration_ampl_val = (shear_displ_add[xcnt] + shear_displ_sub[xcnt])*crack_model_shear_factor
+  # utt is a vibration amplitude... shear_displ_add[xidx] + shear_displ_sub[xidx] gives the peak-to-peak value for __each_side__ of the crack. Ampltiude is half that... but also double because relative motion of flanks is twice the motion of each flank... so net no change,
+  shear_vibration_ampl_val = (shear_displ_add[xidx] + shear_displ_sub[xidx])*crack_model_shear_factor
   PP_vibration_y=uyy_add-uyy_sub
   vibration_ampl_val=PP_vibration_y/2.0
-  #PP_vibration_t=shear_vibration_ampl[fc_idx,xcnt]*2.0
-  tangential_vibration_ampl=np.abs(vibration_ampl[fc_idx,xcnt] * np.sin(beta_draws) + shear_vibration_ampl[fc_idx,xcnt]*np.cos(beta_draws))*slip
+  #PP_vibration_t=shear_vibration_ampl[fc_idx,xidx]*2.0
+  tangential_vibration_ampl=np.abs(vibration_ampl_val * np.sin(beta_draws) + shear_vibration_ampl_val*np.cos(beta_draws))*slip
   tangential_vibration_velocity_ampl = 2*np.pi*vibration_frequency*tangential_vibration_ampl
       
   # Power = (1/2)Fampl*vampl
@@ -209,13 +210,16 @@ def angled_friction_model_single_xpos(x_bnd,xrange,xstep,xidx,numdraws,
 
   power_per_m2_val = np.sum(Power/(xstep*zone_length)) # Actually mean, because we already divided by numdraws
   power_per_m2_stddev_val = np.sqrt(np.sum((Power*numdraws/(xstep*zone_length) - power_per_m2_val)**2.0)/(numdraws-1))   
-
+  power_per_m2_vals = Power*numdraws/(xstep*zone_length) 
+  power_per_m2_mean_stddev_val = np.sqrt(np.sum((Power*numdraws/(xstep*zone_length) - power_per_m2_val)**2.0)/(numdraws-1))/np.sqrt(numdraws) 
   
 
   return (power_per_m2_val,
           power_per_m2_stddev_val,
           vibration_ampl_val,
-          shear_vibration_ampl_val) 
+          shear_vibration_ampl_val,
+          power_per_m2_vals,
+          power_per_m2_mean_stddev_val) 
 
 def angled_friction_model(x_bnd,xrange,xstep,
                           numdraws,
@@ -337,6 +341,8 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
   power_per_m2 = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
   power_per_m2_stddev = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
+  power_per_m2_mean_stddev = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
+  power_per_m2_vals = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='O')
   vibration_ampl = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
   shear_vibration_ampl = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
 
@@ -354,11 +360,14 @@ def angled_friction_model(x_bnd,xrange,xstep,
       (power_per_m2[fc_idx,xcnt],
        power_per_m2_stddev[fc_idx,xcnt],
        vibration_ampl[fc_idx,xcnt],
-       shear_vibration_ampl[fc_idx,xcnt]) = angled_friction_model_single_xpos(x_bnd,xrange,xstep,xidx,numdraws,
+       shear_vibration_ampl[fc_idx,xcnt],
+       power_per_m2_vals[fc_idx,xcnt],
+       power_per_m2_mean_stddev[fc_idx,xcnt]) = angled_friction_model_single_xpos(x_bnd,xrange,xstep,xcnt,numdraws,
                                                                               friction_coefficient[fc_idx],
                                                                               beta_drawfunc,
                                                                               sigma_add,sigma_sub,
                                                                               tensile_displ_add,tensile_displ_sub,
+                                                                              closure_point_add,closure_point_sub,
                                                                               tau_add,tau_sub,
                                                                               shear_displ_add,shear_displ_sub,
                                                                               vibration_frequency,
@@ -367,49 +376,75 @@ def angled_friction_model(x_bnd,xrange,xstep,
                                                                               crack_type,
                                                                               thickness,
                                                                               verbose)
-      numdraws_over_x[xidx] = numdraws
-      
-      if max_total_stddev is not None:
-        if crack_type == "quarterpenny":
-          slice_area = xstep * np.pi*np.abs(xrange)/2.0
-          pass
-        elif crack_type=="halfthrough":
-          slice_area = dx*thickness
-          pass
-
-        variance_weighting = slice_area**2.0
-
-        while np.sqrt(np.sum(power_per_m2_stddev[fc_idx,:]**2.0 * variance_weighting)) > max_total_stddev:
-          variance_terms = power_per_m2_stddev[fc_idx,:]**2.0 * variance_weighting
-          variance_worstterm = np.argmax(variance_terms)
-
-          (power_per_m2_increment,
-           power_per_m2_stddev_increment,
-           vibration_ampl_increment,
-           shear_vibration_ampl_increment) = angled_friction_model_single_xpos(x_bnd,xrange,xstep,variance_worstterm,numdraws,
-                                                                               friction_coefficient[fc_idx],
-                                                                               beta_drawfunc,
-                                                                               sigma_add,sigma_sub,
-                                                                               tensile_displ_add,tensile_displ_sub,
-                                                                               tau_add,tau_sub,
-                                                                               shear_displ_add,shear_displ_sub,
-                                                                               vibration_frequency,
-                                                                               crack_model_shear_factor,
-                                                                               msqrtR,
-                                                                               crack_type,
-                                                                               thickness,
-                                                                               verbose)
-
-          power_per_m2[fc_idx,variance_worstterm] = (power_per_m2[fc_idx,variance_worstterm]*numdraws_over_x[xidx] + power_per_m2_increment*numdraws)/(numdraws_over_x[xidx] + numdraws)
-          power_per_m2_stddev_val[fc_idx,variance_worstterm] = np.sqrt( ( (power_per_m2_stddev_val[fc_idx,variance_worstterm]**2.0)*(numdraws_over_x[xidx]-1) + (power_per_m2_stddev_increment**2.0)*(numdraws-1))/(numdraws_over_x[xidx] + numdraws - 1) )
-          numdraws_over_x[variance_worstterm] = numdraws_over_x[variance_worstterm] + numdraws
-          
-          pass
-                                       
+      numdraws_over_x[xcnt] = numdraws
+      pass
+    if max_total_stddev is not None:
+      if crack_type == "quarterpenny":
+        slice_area = xstep * np.pi*np.abs(xrange)/2.0
         pass
+      elif crack_type=="halfthrough":
+        slice_area = dx*thickness
+        pass
+
+      variance_weighting = slice_area**2.0
+      itercnt=0
+      
+      while np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)) > max_total_stddev:
+
+        print("total_stddev = %g -- compared to %g" % (np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)),max_total_stddev))
+
+        # stddev = sqrt(sum_x sum_draws((power_x-power_mean_x)**2 * variance_weighting_x)/num_draws)
+        # stddev nominally single_draw_stddev/sqrt(num_draws)
+        # dstddev/ddraw = nominally single_draw_stddev * -(1/2)/num_draws^(3/2)
+
+        # variance nominally single_draw_variance/num_draws
+        # dvariance/ddraw = nominally single_draw_variance * -1/num_draws^(2)
+# If you add draws
+
+        variance_terms = power_per_m2_stddev[fc_idx,:]**2.0 * variance_weighting
+        variance_bestchangeterm = np.argmax(np.sqrt(variance_terms)*0.5/numdraws_over_x**(3.0/2.0))
+
+        (power_per_m2_increment,
+         power_per_m2_stddev_increment,
+         vibration_ampl_increment,
+         shear_vibration_ampl_increment,
+         power_per_m2_vals_increment,
+         power_per_m2_mean_stddev_increment) = angled_friction_model_single_xpos(x_bnd,xrange,xstep,variance_bestchangeterm,numdraws,
+                                                                          friction_coefficient[fc_idx],
+                                                                             beta_drawfunc,
+                                                                             sigma_add,sigma_sub,
+                                                                             tensile_displ_add,tensile_displ_sub,
+                                                                             closure_point_add,closure_point_sub,
+                                                                             tau_add,tau_sub,
+                                                                             shear_displ_add,shear_displ_sub,
+                                                                             vibration_frequency,
+                                                                             crack_model_shear_factor,
+                                                                             msqrtR,
+                                                                             crack_type,
+                                                                             thickness,
+                                                                             verbose)
+        print("variance_bestchangeterm=%d; power_per_m2_stddev=%g" % (variance_bestchangeterm,power_per_m2_stddev[fc_idx,variance_bestchangeterm]))
+
+        #power_per_m2_previous = power_per_m2[fc_idx,variance_bestchangeterm]
+        #power_per_m2[fc_idx,variance_bestchangeterm] = (power_per_m2_previous*numdraws_over_x[variance_bestchangeterm] + power_per_m2_increment*numdraws)/(numdraws_over_x[variance_bestchangeterm] + numdraws)
+        #power_per_m2_stddev[fc_idx,variance_bestchangeterm] = np.sqrt( ( (power_per_m2_stddev[fc_idx,variance_bestchangeterm]**2.0)*(numdraws_over_x[variance_bestchangeterm]-1) + (power_per_m2_stddev_increment**2.0)*(numdraws-1))/(numdraws_over_x[variance_bestchangeterm] + numdraws - 1) )
+        power_per_m2[fc_idx,variance_bestchangeterm] = (np.sum(power_per_m2_vals[fc_idx,variance_bestchangeterm])  + np.sum(power_per_m2_vals_increment))/(numdraws_over_x[variance_bestchangeterm] + numdraws)
+        power_per_m2_stddev[fc_idx,variance_bestchangeterm] = np.sqrt((np.sum((power_per_m2_vals[fc_idx,variance_bestchangeterm] - power_per_m2[fc_idx,variance_bestchangeterm])**2) + np.sum((power_per_m2_vals_increment - power_per_m2[fc_idx,variance_bestchangeterm])**2))/(numdraws_over_x[variance_bestchangeterm] + numdraws + 1))
+        numdraws_over_x[variance_bestchangeterm] = numdraws_over_x[variance_bestchangeterm] + numdraws
+        power_per_m2_vals[fc_idx,variance_bestchangeterm] = np.concatenate((power_per_m2_vals[fc_idx,variance_bestchangeterm],power_per_m2_vals_increment))
+        
+        power_per_m2_mean_stddev[fc_idx,variance_bestchangeterm] = power_per_m2_stddev[fc_idx,variance_bestchangeterm]/np.sqrt(numdraws_over_x[variance_bestchangeterm])
+        
+        
+        print("updated power_per_m2_stddev=%g" % (power_per_m2_stddev[fc_idx,variance_bestchangeterm]))
+        itercnt+=1
+        #if itercnt==10:
+        #  raise ValueError()
+        pass
+                                       
+      pass
       
     
-      pass
     pass
     
   if unwrapflag:
@@ -442,11 +477,11 @@ def angled_friction_model(x_bnd,xrange,xstep,
     #pl.show()
     pass
 
-  return (power_per_m2,power_per_m2_stddev,vibration_ampl,shear_vibration_ampl)
+  return (power_per_m2,power_per_m2_mean_stddev,vibration_ampl,shear_vibration_ampl)
 
 
 
-def integrate_power(xrange,crack_type,thickness,power_per_m2,power_per_m2_stddev=None):
+def integrate_power(xrange,crack_type,thickness,power_per_m2,power_per_m2_mean_stddev=None):
   # integrate power over half of a half-penny shaped crack or through
   # crack ... applies
   # over last axis
@@ -463,8 +498,8 @@ def integrate_power(xrange,crack_type,thickness,power_per_m2,power_per_m2_stddev
     
   totalpower = np.sum(power_per_m2*slice_area,axis=len(power_per_m2.shape)-1)
 
-  if power_per_m2_stddev is not None:
-    totalpower_stddev = np.sqrt(np.sum(power_per_m2_stddev**2.0 * slice_area**2.0,axis=len(power_per_m2.shape)-1))
+  if power_per_m2_mean_stddev is not None:
+    totalpower_stddev = np.sqrt(np.sum(power_per_m2_mean_stddev**2.0 * slice_area**2.0,axis=len(power_per_m2.shape)-1))
     return (totalpower,totalpower_stddev)
   else:
     return totalpower

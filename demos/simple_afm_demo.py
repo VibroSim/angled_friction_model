@@ -44,7 +44,7 @@ vib_shear_stress_ampl = 0.0 # Vibrational shear stress amplitude (Pa)
 # Standard deviation representing crack surface tortuosity
 angular_stddev = 28*np.pi/180.0
 
-numdraws=20 # Number of draws from crack tortuosity  per step
+numdraws=200 # Number of draws from crack tortuosity  per step
 
 
 # material parameters
@@ -149,7 +149,7 @@ pl.title('Crack closure state')
 
 # Now calculate crack heating under the given conditions
 (power_per_m2_left,
- power_per_m2_stddev_left,
+ power_per_m2_mean_stddev_left,
  vibration_ampl_left,
  shear_vibration_ampl_left) = angled_friction_model(x_bnd,xrange,xstep,
                                                     numdraws,
@@ -171,10 +171,11 @@ pl.title('Crack closure state')
                                                     "quarterpenny",
                                                     None,
                                                     verbose,
-                                                    doplots)
+                                                    doplots,
+                                                    max_total_stddev=0.0001)
 
 (power_per_m2_right,
- power_per_m2_stddev_right,
+ power_per_m2_mean_stddev_right,
  vibration_ampl_right,
  shear_vibration_ampl_right) = angled_friction_model(x_bnd,xrange,xstep,
                                                      numdraws,
@@ -196,10 +197,11 @@ pl.title('Crack closure state')
                                                      "quarterpenny",
                                                      None,          
                                                      verbose,
-                                                     doplots)
+                                                     doplots,
+                                                     max_total_stddev=0.0001)
 
-(totalpower_left, totalpower_stddev_left) = integrate_power(xrange,"quarterpenny",None,power_per_m2_left,power_per_m2_stddev_left)
-(totalpower_right, totalpower_stddev_right) = integrate_power(xrange,"quarterpenny",None,power_per_m2_right,power_per_m2_stddev_right)
+(totalpower_left, totalpower_stddev_left) = integrate_power(xrange,"quarterpenny",None,power_per_m2_left,power_per_m2_mean_stddev_left)
+(totalpower_right, totalpower_stddev_right) = integrate_power(xrange,"quarterpenny",None,power_per_m2_right,power_per_m2_mean_stddev_right)
 
 totalpower=totalpower_left + totalpower_right
 
