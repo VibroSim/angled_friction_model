@@ -391,7 +391,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       
       while np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)) > max_total_stddev:
 
-        print("total_stddev = %g -- compared to %g" % (np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)),max_total_stddev))
+        #print("total_stddev = %g -- compared to %g" % (np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)),max_total_stddev))
 
         # stddev = sqrt(sum_x sum_draws((power_x-power_mean_x)**2 * variance_weighting_x)/num_draws)
         # stddev nominally single_draw_stddev/sqrt(num_draws)
@@ -410,20 +410,20 @@ def angled_friction_model(x_bnd,xrange,xstep,
          shear_vibration_ampl_increment,
          power_per_m2_vals_increment,
          power_per_m2_mean_stddev_increment) = angled_friction_model_single_xpos(x_bnd,xrange,xstep,variance_bestchangeterm,numdraws,
-                                                                          friction_coefficient[fc_idx],
-                                                                             beta_drawfunc,
-                                                                             sigma_add,sigma_sub,
-                                                                             tensile_displ_add,tensile_displ_sub,
-                                                                             closure_point_add,closure_point_sub,
-                                                                             tau_add,tau_sub,
-                                                                             shear_displ_add,shear_displ_sub,
-                                                                             vibration_frequency,
-                                                                             crack_model_shear_factor,
-                                                                             msqrtR,
-                                                                             crack_type,
-                                                                             thickness,
-                                                                             verbose)
-        print("variance_bestchangeterm=%d; power_per_m2_stddev=%g" % (variance_bestchangeterm,power_per_m2_stddev[fc_idx,variance_bestchangeterm]))
+                                                                                 friction_coefficient[fc_idx],
+                                                                                 beta_drawfunc,
+                                                                                 sigma_add,sigma_sub,
+                                                                                 tensile_displ_add,tensile_displ_sub,
+                                                                                 closure_point_add,closure_point_sub,
+                                                                                 tau_add,tau_sub,
+                                                                                 shear_displ_add,shear_displ_sub,
+                                                                                 vibration_frequency,
+                                                                                 crack_model_shear_factor,
+                                                                                 msqrtR,
+                                                                                 crack_type,
+                                                                                 thickness,
+                                                                                 verbose)
+        #print("variance_bestchangeterm=%d; power_per_m2_stddev=%g" % (variance_bestchangeterm,power_per_m2_stddev[fc_idx,variance_bestchangeterm]))
 
         #power_per_m2_previous = power_per_m2[fc_idx,variance_bestchangeterm]
         #power_per_m2[fc_idx,variance_bestchangeterm] = (power_per_m2_previous*numdraws_over_x[variance_bestchangeterm] + power_per_m2_increment*numdraws)/(numdraws_over_x[variance_bestchangeterm] + numdraws)
@@ -436,7 +436,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
         power_per_m2_mean_stddev[fc_idx,variance_bestchangeterm] = power_per_m2_stddev[fc_idx,variance_bestchangeterm]/np.sqrt(numdraws_over_x[variance_bestchangeterm])
         
         
-        print("updated power_per_m2_stddev=%g" % (power_per_m2_stddev[fc_idx,variance_bestchangeterm]))
+        #print("updated power_per_m2_stddev=%g" % (power_per_m2_stddev[fc_idx,variance_bestchangeterm]))
         itercnt+=1
         #if itercnt==10:
         #  raise ValueError()
