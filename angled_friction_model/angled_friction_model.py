@@ -301,8 +301,8 @@ def angled_friction_model(x_bnd,xrange,xstep,
   scp.initialize_contact(closure_stress_softmodel,crack_initial_opening)
 
   # Evaluate contact stress on both sides of static load
-  (du_da_sub,contact_stress_sub,tensile_displ_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
-  (du_da_add,contact_stress_add,tensile_displ_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
+  (du_da_sub,contact_stress_sub,tensile_displ_sub,contact_stress_sub_from_stress,residual_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
+  (du_da_add,contact_stress_add,tensile_displ_add,contact_stress_add_from_stress,residual_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
 
 
   sigma_sub=-contact_stress_sub  # sigma_sub and sigma_add are positive tensile
@@ -477,7 +477,8 @@ def angled_friction_model(x_bnd,xrange,xstep,
     #pl.show()
     pass
 
-  return (power_per_m2,power_per_m2_mean_stddev,vibration_ampl,shear_vibration_ampl)
+  return (power_per_m2,power_per_m2_mean_stddev,vibration_ampl,shear_vibration_ampl,
+          residual_sub,residual_add)
 
 
 
