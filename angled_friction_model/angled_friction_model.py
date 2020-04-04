@@ -392,7 +392,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
       while np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)) > max_total_stddev:
 
         if itercnt >= 10000:
-          print("angled_friction_model WARNING: Desired goal standard deviation of %g not achieved after 10000 iterations (standard deviation was %g) at mu=%g, xcnt=%d" % (max_total,np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)),friction_coefficient[fc_idx],xcnt))
+          print("angled_friction_model WARNING: Desired goal standard deviation of %g not achieved after 10000 iterations (standard deviation was %g) at mu=%g, xcnt=%d" % (max_total_stddev,np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)),friction_coefficient[fc_idx],xcnt))
           break
 
         #print("total_stddev = %g -- compared to %g" % (np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)),max_total_stddev))
