@@ -1,3 +1,7 @@
+import os
+import os.path
+import copy
+
 import scipy 
 import numpy as np
 from scipy.integrate import quad
@@ -388,11 +392,71 @@ def angled_friction_model(x_bnd,xrange,xstep,
 
       variance_weighting = slice_area**2.0
       itercnt=0
+      iterlog=[]
       
       while np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)) > max_total_stddev:
 
         if itercnt >= 10000:
           print("angled_friction_model WARNING: Desired goal standard deviation of %g not achieved after 10000 iterations (standard deviation was %g) at mu=%g, xcnt=%d" % (max_total_stddev,np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)),friction_coefficient[fc_idx],xcnt))
+          # Save iteration log for debugging purposes 
+
+          import pickle
+          import inspect
+          import copy
+          import tempfile
+          
+
+          index=0
+          filename=os.path.join(tempfile.gettempdir(),"afmdebug%d_%d.pickle" % (os.getpid(),index))
+          while os.path.exists(filename):
+            index+=1
+            filename=os.path.join(tempfile.gettempdir(),"afmdebug%d_%d.pickle" % (os.getpid(),index))
+            pass
+          
+          picklefh=open(filename,"wb")
+          
+          scp_copy=copy.deepcopy(scp)
+          scp_copy.crack_model = None
+
+
+          to_pickle = {
+            "iterlog": iterlog,
+
+            "scp": scp_copy,
+            "crack_model_class": scp.crack_model.__class__.__name__,
+            "E": scp.crack_model.E,
+            "nu": scp.crack_model.nu,
+            
+
+            "x_bnd": x_bnd,
+            "xrange": xrange,
+            "xstep": xstep,
+            "numdraws": numdraws,
+            "fc_idx": fc_idx,
+            "friction_coefficent": friction_coefficient[fc_idx],
+            "angular_stddev": angular_stddev,
+            "sigma_add": sigma_add,
+            "sigma_sub": sigma_sub,
+            "tensile_displ_add": tensile_displ_add,
+            "tensile_displ_sub": tensile_displ_sub,
+            "closure_point_add": closure_point_add,
+            "closure_point_sub": closure_point_sub,
+            "tau_add": tau_add,
+            "tau_sub": tau_sub,
+            "shear_displ_add": shear_displ_add,
+            "shear_displ_sub": shear_displ_sub,
+            "vibration_frequency": vibration_frequency,
+            "crack_model_shear_factor": crack_model_shear_factor,
+            "msqrtR": msqrtR,
+            "crack_type": crack_type,
+            "thickness": thickness,
+            "verbose": verbose,
+            "slice_area": slice_area,
+            "variance_weighting": variance_weighting,
+          }
+          pickle.dump(to_pickle,picklefh)
+          picklefh.close()
+          
           break
 
         #print("total_stddev = %g -- compared to %g" % (np.sqrt(np.sum(power_per_m2_mean_stddev[fc_idx,:]**2.0 * variance_weighting)),max_total_stddev))
@@ -432,12 +496,39 @@ def angled_friction_model(x_bnd,xrange,xstep,
         #power_per_m2_previous = power_per_m2[fc_idx,variance_bestchangeterm]
         #power_per_m2[fc_idx,variance_bestchangeterm] = (power_per_m2_previous*numdraws_over_x[variance_bestchangeterm] + power_per_m2_increment*numdraws)/(numdraws_over_x[variance_bestchangeterm] + numdraws)
         #power_per_m2_stddev[fc_idx,variance_bestchangeterm] = np.sqrt( ( (power_per_m2_stddev[fc_idx,variance_bestchangeterm]**2.0)*(numdraws_over_x[variance_bestchangeterm]-1) + (power_per_m2_stddev_increment**2.0)*(numdraws-1))/(numdraws_over_x[variance_bestchangeterm] + numdraws - 1) )
+        old_ppm_entry = power_per_m2[fc_idx,variance_bestchangeterm]
+        old_ppms_entry = power_per_m2_stddev[fc_idx,variance_bestchangeterm]
+        old_ppmv_entry = power_per_m2_vals[fc_idx,variance_bestchangeterm]
+        old_ppmms_entry = power_per_m2_mean_stddev[fc_idx,variance_bestchangeterm]
+
         power_per_m2[fc_idx,variance_bestchangeterm] = (np.sum(power_per_m2_vals[fc_idx,variance_bestchangeterm])  + np.sum(power_per_m2_vals_increment))/(numdraws_over_x[variance_bestchangeterm] + numdraws)
         power_per_m2_stddev[fc_idx,variance_bestchangeterm] = np.sqrt((np.sum((power_per_m2_vals[fc_idx,variance_bestchangeterm] - power_per_m2[fc_idx,variance_bestchangeterm])**2) + np.sum((power_per_m2_vals_increment - power_per_m2[fc_idx,variance_bestchangeterm])**2))/(numdraws_over_x[variance_bestchangeterm] + numdraws + 1))
         numdraws_over_x[variance_bestchangeterm] = numdraws_over_x[variance_bestchangeterm] + numdraws
         power_per_m2_vals[fc_idx,variance_bestchangeterm] = np.concatenate((power_per_m2_vals[fc_idx,variance_bestchangeterm],power_per_m2_vals_increment))
         
         power_per_m2_mean_stddev[fc_idx,variance_bestchangeterm] = power_per_m2_stddev[fc_idx,variance_bestchangeterm]/np.sqrt(numdraws_over_x[variance_bestchangeterm])
+
+        iterlogentry = {
+          "itercnt": itercnt,
+          "variance_bestchangeterm": variance_bestchangeterm,
+          "power_per_m2_increment": power_per_m2_increment,
+          "power_per_m2_stddev_increment": power_per_m2_stddev_increment,
+          "vibration_ampl_increment": vibration_ampl_increment,
+          "shear_vibration_ampl_increment": shear_vibration_ampl_increment,
+          "power_per_m2_vals_increment" power_per_m2_vals_increment,
+          "power_per_m2_mean_stddev_increment": power_per_m2_mean_stddev_increment,
+          "old_ppm_entry": old_ppm_entry,
+          "old_ppms_entry": old_ppms_entry,
+          "old_ppmv_entry": old_ppmv_entry,
+          "old_ppmms_entry": old_ppmms_entry,
+          "numdraws_over_x_entry": numdraws_over_x,
+          "new_ppm_entry": power_per_m2[fc_idx,variance_bestchangeterm]
+          "new_ppms_entry": power_per_m2_stddev[fc_idx,variance_bestchangeterm]
+          "new_ppmv_entry": power_per_m2_vals[fc_idx,variance_bestchangeterm]
+          "new_ppmms_entry": power_per_m2_mean_stddev[fc_idx,variance_bestchangeterm]
+        }
+
+        iterlog.append(iterlogentry)
         
         
         #print("updated power_per_m2_stddev=%g" % (power_per_m2_stddev[fc_idx,variance_bestchangeterm]))
