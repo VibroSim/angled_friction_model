@@ -515,17 +515,17 @@ def angled_friction_model(x_bnd,xrange,xstep,
           "power_per_m2_stddev_increment": power_per_m2_stddev_increment,
           "vibration_ampl_increment": vibration_ampl_increment,
           "shear_vibration_ampl_increment": shear_vibration_ampl_increment,
-          "power_per_m2_vals_increment" power_per_m2_vals_increment,
+          "power_per_m2_vals_increment": power_per_m2_vals_increment,
           "power_per_m2_mean_stddev_increment": power_per_m2_mean_stddev_increment,
           "old_ppm_entry": old_ppm_entry,
           "old_ppms_entry": old_ppms_entry,
           "old_ppmv_entry": old_ppmv_entry,
           "old_ppmms_entry": old_ppmms_entry,
           "numdraws_over_x_entry": numdraws_over_x,
-          "new_ppm_entry": power_per_m2[fc_idx,variance_bestchangeterm]
-          "new_ppms_entry": power_per_m2_stddev[fc_idx,variance_bestchangeterm]
-          "new_ppmv_entry": power_per_m2_vals[fc_idx,variance_bestchangeterm]
-          "new_ppmms_entry": power_per_m2_mean_stddev[fc_idx,variance_bestchangeterm]
+          "new_ppm_entry": power_per_m2[fc_idx,variance_bestchangeterm],
+          "new_ppms_entry": power_per_m2_stddev[fc_idx,variance_bestchangeterm],
+          "new_ppmv_entry": power_per_m2_vals[fc_idx,variance_bestchangeterm],
+          "new_ppmms_entry": power_per_m2_mean_stddev[fc_idx,variance_bestchangeterm],
         }
 
         iterlog.append(iterlogentry)
