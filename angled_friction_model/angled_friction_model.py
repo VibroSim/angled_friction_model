@@ -1,6 +1,10 @@
 import os
 import os.path
 import copy
+import pickle
+import inspect
+import tempfile
+            
 
 import scipy 
 import numpy as np
@@ -405,11 +409,6 @@ def angled_friction_model(x_bnd,xrange,xstep,
             # Save iteration log for debugging purposes 
           
 
-            import pickle
-            import inspect
-            import copy
-            import tempfile
-            
             
             index=0
             filename=os.path.join(tempfile.gettempdir(),"afmdebug%d_%d.pickle" % (os.getpid(),index))
