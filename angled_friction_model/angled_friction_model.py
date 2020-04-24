@@ -235,7 +235,7 @@ def angled_friction_model(x_bnd,xrange,xstep,
                           sigma_yield,tau_yield,
                           friction_coefficient,  # ADJUSTABLE, can pass vector
                           closure_stress,
-                          crack_initial_opening,
+                          crack_initial_half_opening,
                           angular_stddev, 
                           a_crack,
                           static_load, # Positive tensile
@@ -302,11 +302,11 @@ def angled_friction_model(x_bnd,xrange,xstep,
   closure_stress_softmodel[closure_stress_softmodel < 0.0]=0.0
 
 
-  #scp.setcrackstate(closure_stress_softmodel,crack_initial_opening)
+  #scp.setcrackstate(closure_stress_softmodel,crack_initial_opening*2.0)
 
   # initialize_contact() solves to find the compressive portion
   # of crack_initial_opening based on the closure stress profile
-  scp.initialize_contact(closure_stress_softmodel,crack_initial_opening)
+  scp.initialize_contact(closure_stress_softmodel,crack_initial_half_opening*2.0)  # ... crack_initial_half_opening*2.0 because initialize_contact() wants full opening
 
   # Evaluate contact stress on both sides of static load
   (du_da_sub,contact_stress_sub,tensile_displ_sub,contact_stress_sub_from_stress,residual_sub)=soft_closure.calc_contact(scp,static_load-vib_normal_stress_ampl)
