@@ -357,14 +357,17 @@ def angled_friction_model(x_bnd,xrange,xstep,
   
   for fc_idx in range(len(friction_coefficient)):
     # ss variables are for shear_stickslip calculations
-    # These solve_shearstress calls are factored out of the xcnt loop but not the shear loop 
-    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
+    # These solve_shearstress calls are factored out of the xcnt loop but not the shear loop
+
+    num_crack_points = scp.afull_idx
+    
+    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange[:num_crack_points],x_bnd[:(num_crack_points+1)],-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
       
-    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
+    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange[:num_crack_points],x_bnd[:num_crack_points+1],-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
 
     numdraws_over_x = np.zeros(xrange.shape[0],dtype='d')
     
-    for xcnt in range(numsteps):
+    for xcnt in range(scp.afull_idx): # range(numsteps)
       (power_per_m2[fc_idx,xcnt],
        power_per_m2_stddev[fc_idx,xcnt],
        vibration_ampl[fc_idx,xcnt],
@@ -474,8 +477,8 @@ def angled_friction_model(x_bnd,xrange,xstep,
         # dvariance/ddraw = nominally single_draw_variance * -1/num_draws^(2)
 # If you add draws
 
-        variance_terms = power_per_m2_stddev[fc_idx,:]**2.0 * variance_weighting
-        variance_bestchangeterm = np.argmax(np.sqrt(variance_terms)*0.5/numdraws_over_x**(3.0/2.0))
+        variance_terms = power_per_m2_stddev[fc_idx,:scp.afull_idx]**2.0 * variance_weighting[:scp.afull_idx]
+        variance_bestchangeterm = np.argmax(np.sqrt(variance_terms)*0.5/numdraws_over_x[:scp.afull_idx]**(3.0/2.0))
 
         (power_per_m2_increment,
          power_per_m2_stddev_increment,
