@@ -313,9 +313,9 @@ def angled_friction_model(x_bnd,xrange,xstep,
   (du_da_add,contact_stress_add,tensile_displ_add,contact_stress_add_from_stress,residual_add)=soft_closure.calc_contact(scp,static_load+vib_normal_stress_ampl)
 
 
-  sigma_sub=-contact_stress_sub  # sigma_sub and sigma_add are positive tensile
-  sigma_add=-contact_stress_add
-
+  sigma_sub=np.concatenate((-contact_stress_sub,np.zeros(xrange.shape[0]-contact_stress_sub.shape[0],dtype='d')))  # sigma_sub and sigma_add are positive tensile
+  sigma_add=np.concatenate((-contact_stress_add,np.zeros(xrange.shape[0]-contact_stress_sub.shape[0],dtype='d')))
+  
   sub_notopening = np.where(tensile_displ_sub < 0)[0]
   if sub_notopening.shape[0] > 0:
     closure_point_sub = xrange[sub_notopening[0]]
@@ -355,19 +355,20 @@ def angled_friction_model(x_bnd,xrange,xstep,
   shear_vibration_ampl = np.zeros((len(friction_coefficient),xrange.shape[0]),dtype='d')
 
   
+  num_crack_points = scp.afull_idx
+
   for fc_idx in range(len(friction_coefficient)):
     # ss variables are for shear_stickslip calculations
     # These solve_shearstress calls are factored out of the xcnt loop but not the shear loop
 
-    num_crack_points = scp.afull_idx
     
-    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange[:num_crack_points],x_bnd[:(num_crack_points+1)],-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
+    (effective_length_sub, tau_sub, shear_displ_sub) = solve_shearstress(xrange,x_bnd,-sigma_sub,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
       
-    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange[:num_crack_points],x_bnd[:num_crack_points+1],-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
+    (effective_length_add, tau_add, shear_displ_add) = solve_shearstress(xrange,x_bnd,-sigma_add,xstep,vib_shear_stress_ampl,a_crack,friction_coefficient[fc_idx],tau_yield,crack_model_shear)
 
     numdraws_over_x = np.zeros(xrange.shape[0],dtype='d')
     
-    for xcnt in range(scp.afull_idx): # range(numsteps)
+    for xcnt in range(num_crack_points): # range(numsteps)... now limited to indexing over the actual zone of the crack
       (power_per_m2[fc_idx,xcnt],
        power_per_m2_stddev[fc_idx,xcnt],
        vibration_ampl[fc_idx,xcnt],
