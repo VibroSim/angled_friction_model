@@ -1,5 +1,6 @@
 import sys
 import os
+import copy
 import os.path
 import tempfile
 import scipy 
@@ -42,7 +43,7 @@ vib_shear_stress_ampl = 0.0 # Vibrational shear stress amplitude (Pa)
 
 
 # Standard deviation representing crack surface tortuosity
-angular_stddev = 28*np.pi/180.0
+angular_stddev = 30.5*np.pi/180.0 # Average from our set of test cracks
 
 numdraws=200 # Number of draws from crack tortuosity  per step
 
@@ -213,12 +214,32 @@ pl.clf()
 pl.plot(-xrange*1e3,power_per_m2_left/1.e3,'-',
         xrange*1e3,power_per_m2_right/1.e3,'-',)
 pl.grid()
-pl.xlabel('Radius from center (mm)')
+pl.xlabel('Position relative to crack center (mm)')
 pl.ylabel('Heating power (kW/m^2)')
 pl.title('Crack power deposition')
 # Save png image of figure in system temporary directory
 pl.savefig(os.path.join(tempfile.gettempdir(),'frictional_heating.png'),dpi=300)
 
+
+
+closure_stress_leftside_positive=copy.copy(closure_stress_leftside)
+closure_stress_leftside_positive[closure_stress_leftside_positive < 0.0]=0.0
+
+closure_stress_rightside_positive=copy.copy(closure_stress_rightside)
+closure_stress_rightside_positive[closure_stress_rightside_positive < 0.0]=0.0
+pl.figure(figsize=(6.4,2.4))
+#(fig,ax1)=pl.subplots()
+pl1=pl.plot(-xrange*1e3,closure_stress_leftside_positive/1e6,'-',
+            xrange*1e3,closure_stress_rightside_positive/1e6,'-')
+pl.ylabel('Closure stress (MPa)')
+#ax2=ax1.twinx()
+#pl2=pl.plot(-xrange*1e3,crack_initial_opening_leftside*1e6,'r',
+#            xrange*1e3,crack_initial_opening_rightside*1e6,'k')
+#ax2.set_ylabel('Crack initial opening displacement (um)')
+pl.xlabel('Position relative to crack center (mm)')
+pl.grid()
+
+pl.savefig(os.path.join(tempfile.gettempdir(),'frictional_heating_closure_state.png'),dpi=300)
 
 pl.show()  # Display figures
 

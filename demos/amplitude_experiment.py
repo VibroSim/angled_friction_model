@@ -35,7 +35,7 @@ static_load=60e6  # tensile static load of 60MPa
 # assume also that there is no synergy between heating from different modes. 
 
 # Standard deviation representing crack surface tortuosity
-angular_stddev = 28*np.pi/180.0
+angular_stddev = 30.5*np.pi/180.0
 
 numdraws=20 # Number of draws from crack tortuosity  per step
 

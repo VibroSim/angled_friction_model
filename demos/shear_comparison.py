@@ -41,7 +41,7 @@ vib_stress_ampl =40e6  # vibrational stress amplitude (Pa).
 
 
 # Standard deviation representing crack surface tortuosity
-angular_stddev = 28*np.pi/180.0
+angular_stddev = 30.5*np.pi/180.0 # average from our set of test cracks
 
 numdraws=100 # Number of draws from crack tortuosity  per step
 
