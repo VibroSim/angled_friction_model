@@ -64,9 +64,9 @@ if __name__=="__main__":
     
 
 
-    #crack_model_normal = ModeI throughcrack_CODformula(E)
+    #crack_model_normal = ModeI throughcrack_CODformula(E,Symmetric_COD=True)
     crack_model_normal = Tada_ModeI_CircularCrack_along_midline(E,nu)
-    #crack_model_shear = ModeII_throughcrack_CSDformula(E,nu)
+    #crack_model_shear = ModeII_throughcrack_CSDformula(E,nu,Symmetric_CSD=True)
     crack_model_shear = Fabrikant_ModeII_CircularCrack_along_midline(E,nu)
 
 
